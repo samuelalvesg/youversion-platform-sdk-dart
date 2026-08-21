@@ -1,0 +1,32 @@
+name: youversion_platform_ui
+description: >-
+  Unofficial Flutter UI components for the YouVersion Platform: sign-in
+  button, Bible card, verse-of-the-day card, version/language pickers and
+  verse action sheet. No state-management dependency - widgets take data
+  and callbacks.
+version: 0.1.0
+homepage: https://github.com/samuelalvesg/youversion-platform-sdk-dart
+repository: https://github.com/samuelalvesg/youversion-platform-sdk-dart
+topics:
+  - youversion
+  - bible
+  - flutter
+  - widgets
+  - ui
+
+environment:
+  sdk: ^3.4.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  youversion_platform_core:
+    path: ../youversion_platform_core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:

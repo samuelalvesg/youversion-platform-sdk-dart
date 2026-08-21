@@ -80,9 +80,18 @@ Symmetris app and its `pillar_ui`/`pillar_core`/`pillar_http` packages).
   Not bundling third-party font files/licenses into this package - accept a
   font family/`TextStyle` via theme injection instead (mirrors Kotlin's
   `FontDefinitionProvider` escape hatch), falling back to the system font.
-- Full planned package/file structure lives in this session's plan file
-  (not repo-tracked) - re-derive or ask for it when implementation actually
-  starts; this entry is the durable "why", not the file-by-file "what".
+- **Implemented (2026-08-21)**: both packages built per the plan above.
+  `youversion_platform_ui` (theme + 10 widgets) and
+  `youversion_platform_reader` (`BibleReader`, `ChapterNavigation`,
+  `PendingHighlightQueue`, `ReaderFontSettings`/`ReaderSettingsStorage`,
+  `YouVersionReaderStorage`, `ReferencesScreen`, `FontSettingsSheet`) -
+  `flutter analyze` clean (only the expected `path:`-dependency warning,
+  same as any pre-pub.dev monorepo package) and `flutter test` green (2
+  widget tests in `_ui`, 8 unit tests in `_reader`) in both. One real bug
+  caught by `flutter analyze` during this pass: `ReaderColorScheme`'s
+  `highlightBorder` was constructed from a 10-hex-digit literal
+  (`0xFF00000029`, a typo - `Color()` only takes 8 hex digits/`0xAARRGGBB`),
+  fixed to `0x29000000`.
 - **Repo name**: `youversion-platform-sdk-dart` - kept generic/monorepo-shaped
   on purpose, matching how the official repos are named differently from
   the packages they contain (e.g. repo `platform-sdk-react` ships npm
