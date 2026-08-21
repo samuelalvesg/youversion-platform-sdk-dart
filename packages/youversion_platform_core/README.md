@@ -1,13 +1,14 @@
 # youversion_platform_core
 
-Unofficial Dart client for the [YouVersion Platform APIs](https://developers.youversion.com):
+Unofficial **Dart** and **Flutter** client for the [YouVersion Platform APIs](https://developers.youversion.com):
 Content (Bibles), Sign-In (OAuth Authorization Code + PKCE), Data Exchange,
 Highlights, Languages, Organizations, and VOTD (Verse of the Day).
 
-Pure Dart package (no Flutter dependency) - it only builds URLs, performs PKCE,
-exchanges/decodes tokens, and calls the API. It doesn't open a browser or capture
-the deep link back: that's the consuming app's responsibility (`url_launcher` +
-a callback route, in the case of a Flutter app).
+Pure Dart package (no Flutter SDK dependency) - it only builds URLs, performs
+PKCE, exchanges/decodes tokens, and calls the API. It doesn't open a browser
+or capture the deep link back: that's the consuming app's responsibility
+(`url_launcher` + a callback route, in the case of a Flutter app). Works
+equally well from a Flutter app, a plain Dart CLI tool, or server-side Dart.
 
 Equivalent to the `platform-core` module of the official SDKs (Kotlin, Swift,
 React, React Native/Expo) - without their `platform-ui`/`platform-reader`

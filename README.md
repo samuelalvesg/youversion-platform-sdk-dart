@@ -1,9 +1,11 @@
 # youversion-platform-sdk-dart
 
-Unofficial Dart/Flutter SDK for the [YouVersion Platform](https://developers.youversion.com)
-APIs. Monorepo, mirroring the layout of the official SDK repos
-(`platform-sdk-kotlin`, `-swift`, `-react`, `-reactnative-expo`): one repo,
-multiple published packages under `packages/`.
+Unofficial **Dart** and **Flutter** SDK for the [YouVersion Platform](https://developers.youversion.com)
+APIs (Bible content, OAuth Sign-In, Highlights, VOTD). Pure Dart package,
+works in Flutter apps, plain Dart CLI tools, or server-side Dart. Monorepo,
+mirroring the layout of the official SDK repos (`platform-sdk-kotlin`,
+`-swift`, `-react`, `-reactnative-expo`): one repo, multiple published
+packages under `packages/`.
 
 Not affiliated with, endorsed by, or maintained by YouVersion/Life.Church.
 

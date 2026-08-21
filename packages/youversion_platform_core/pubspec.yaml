@@ -1,11 +1,17 @@
 name: youversion_platform_core
 description: >-
-  Unofficial Dart client for the YouVersion Platform APIs: Content (Bibles),
-  Sign-In (OAuth PKCE), Data Exchange, Highlights, Languages, Organizations
-  and VOTD. Pure Dart, no Flutter dependency.
+  Unofficial Dart & Flutter client for the YouVersion Platform APIs: Content
+  (Bibles), Sign-In (OAuth PKCE), Data Exchange, Highlights, Languages,
+  Organizations and VOTD. Pure Dart, works in Flutter, CLI or server.
 version: 0.2.0
 homepage: https://github.com/samuelalvesg/youversion-platform-sdk-dart
 repository: https://github.com/samuelalvesg/youversion-platform-sdk-dart
+topics:
+  - youversion
+  - bible
+  - flutter
+  - oauth
+  - api-client
 
 environment:
   sdk: ^3.4.0
