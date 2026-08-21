@@ -15,6 +15,8 @@ layers (native Bible-reading UI), which are out of scope for this package.
 
 Not affiliated with, endorsed by, or maintained by YouVersion/Life.Church.
 
+Repo: <https://github.com/samuelalvesg/youversion-platform-sdk-dart>
+
 ## Installation
 
 Inside this monorepo, the publishable package lives at `packages/youversion_platform_core/`.
