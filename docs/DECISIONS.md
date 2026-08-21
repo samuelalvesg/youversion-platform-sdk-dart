@@ -18,6 +18,26 @@ international audience) - see `CONTRIBUTING.md` for the reasoning.
   Verified available on pub.dev before renaming. Mirrors the official
   `platform-core` module name so a future `_ui`/`_reader` package naming
   scheme stays consistent.
+- **Monorepo, not one repo per package**: considered splitting `core`/`ui`/
+  `reader` into separate repos (as this author's other Flutter package,
+  `pillar_ui`, does - one repo, `pubspec.yaml` at repo root, consumed
+  elsewhere via a plain `git:` dependency with no `path:`). Decided against
+  it: pub.dev publishing is per-package regardless of repo layout, so
+  nothing is lost by keeping one repo; a monorepo keeps `docs/DECISIONS.md`
+  (cross-SDK discrepancies, gap-sweep history) in one place instead of
+  scattered across repos, and a future `_ui`/`_reader` package can depend
+  on `_core` via a local `path:` dependency instead of duplicating types.
+  Consuming this package via `git:` before it's on pub.dev (same pattern as
+  `pillar_ui`) just needs an extra `path:` key inside the `git:` block,
+  which `pub` supports natively for subdirectory packages:
+  ```yaml
+  youversion_platform_core:
+    git:
+      url: https://github.com/samuelalvesg/youversion-platform-sdk-dart.git
+      path: packages/youversion_platform_core
+  ```
+  Would only reconsider separate repos if different packages ever needed
+  different collaborator/permission scopes - not the case here.
 - **Repo name**: `youversion-platform-sdk-dart` - kept generic/monorepo-shaped
   on purpose, matching how the official repos are named differently from
   the packages they contain (e.g. repo `platform-sdk-react` ships npm
