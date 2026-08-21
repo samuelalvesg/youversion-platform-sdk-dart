@@ -5,3 +5,6 @@ pubspec.lock
 .idea/
 *.iml
 .vscode/
+
+# Personal/local notes - not part of the public open-source repo.
+BACKLOG.md
