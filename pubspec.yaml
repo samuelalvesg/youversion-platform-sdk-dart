@@ -4,8 +4,8 @@ description: >-
   Sign-In (OAuth PKCE) and Data Exchange (highlights sync). Pure Dart, no
   Flutter dependency.
 version: 0.1.0
-homepage: https://github.com/samuelalvesg/youversion_platform
-repository: https://github.com/samuelalvesg/youversion_platform
+homepage: https://github.com/samuelalvesg/youversion-platform-sdk-dart
+repository: https://github.com/samuelalvesg/youversion-platform-sdk-dart
 license: MIT
 
 environment:
