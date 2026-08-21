@@ -81,6 +81,43 @@ behavior without explanation.
   from decoding the Sign-In `id_token` locally - this is intentional
   parity with upstream, not a missing feature.
 
+## 2026-08-21 follow-up gap sweep (no action taken)
+
+A second round, using cheaper/faster (Haiku) agents, re-checked a handful of
+loose ends the first sweep had flagged but not confirmed, plus did a general
+"did we miss a whole module" pass and a "did anything change since we
+validated" pass. Result: no real gaps found, package stays as-is.
+
+- `License`, `Video`, `AppSummary` TypeScript schemas (platform-sdk-react
+  `packages/core/src/schemas/{license,video,app}.ts`): all three are
+  orphaned schemas - defined and exported, but never imported by any
+  function that makes an HTTP call. No Kotlin/Swift equivalent either.
+  `license_id` (already a filter param on `listBibles`) is just a query
+  string value, not a resource with its own endpoint. Not a gap.
+- `Font`/`FontVariant`/`FontSource` schema: a real endpoint does exist -
+  `GET /v1/fonts/{id}/stylesheet` (confirmed via an ADR in the React repo,
+  "Adopt Untitled Serif via Fonts API") - but it returns a CSS stylesheet,
+  not JSON, `{id}` is hardcoded to `1` (no font-discovery/listing endpoint
+  exists), and it's consumed by `packages/ui` to inject a `<link>` tag for
+  one specific webfont used in their reading UI. This is a UI-layer
+  webfont-loading concern, not Bible-content/protocol data - out of scope
+  for this package by the same reasoning as `platform-ui`/`platform-reader`
+  being out of scope entirely.
+- `User{avatar_url, first_name, last_name, id}` schema (React,
+  `schemas/user.ts`): confirmed orphaned - exported but never imported
+  anywhere, and no `/v1/users/*` REST endpoint exists in any of the 4
+  official SDKs. Reconfirms all identity in this package correctly comes
+  from decoding the `id_token` locally.
+- Full re-sweep of `platform-core`'s module list (Kotlin, cross-checked
+  against Swift/React top-level API files): the 7 modules already
+  implemented (Content/Bibles, Sign-In, Data Exchange, Highlights,
+  Languages, Organizations, VOTD) are the complete set. No 8th module
+  exists anywhere.
+- Drift check: re-read commit history for every official-SDK file cited in
+  this package's doc comments. Most recent relevant commit was 2026-08-05,
+  well before the 2026-08-21 validation date - nothing changed underneath
+  us since v0.2.0 was implemented.
+
 ## Where to log future changes
 
 - **`packages/youversion_platform_core/CHANGELOG.md`**: what changed, per
