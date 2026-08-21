@@ -38,6 +38,51 @@ international audience) - see `CONTRIBUTING.md` for the reasoning.
   ```
   Would only reconsider separate repos if different packages ever needed
   different collaborator/permission scopes - not the case here.
+
+## `youversion_platform_ui` / `youversion_platform_reader` (planned, not yet built)
+
+Investigated (2026-08-21) via 5 parallel agents: the UI/reader modules of all 4
+official SDKs, plus this author's own established Flutter conventions (the
+Symmetris app and its `pillar_ui`/`pillar_core`/`pillar_http` packages).
+
+- **3 packages, not 2**: Kotlin and Swift both split `platform-ui` (standalone
+  components) from `platform-reader` (full chapter-reading screen, depends on
+  `-ui`), each their own build target/product with an API-stability baseline.
+  React and React Native/Expo instead merge both into a single `ui` package
+  (the "reader" is just one compound component/widget inside it, e.g. React's
+  `BibleReader` in `packages/ui/src/components/bible-reader.tsx`). Chose the
+  3-package split (`youversion_platform_ui`, `youversion_platform_reader`,
+  siblings of `_core` under `packages/`) - it was already the stated intent
+  earlier in this file, and it lets an app that only wants a sign-in
+  button/verse card/VOTD widget avoid pulling in the full reading-screen
+  dependency tree.
+- **Confirmed this does not complicate state-management integration**
+  (a concern raised before committing to it): neither package will own a
+  Riverpod/Provider/Bloc dependency or expose its own state-management
+  primitive. Widgets take data and callbacks as constructor parameters - the
+  exact pattern this author's own `pillar_ui` package already uses in the
+  Symmetris app (e.g. its `ErrorContainerWidget` takes no provider, the app's
+  own Riverpod providers own all state and pass data down). A consuming app
+  wires up `_ui`/`_reader` widgets from its own providers either way,
+  regardless of whether they ship as one package or three - splitting them
+  doesn't add an extra integration surface, it only affects how the SDK
+  itself is packaged/versioned.
+- **Storage-agnostic** (same principle as `_core`'s `installationId`): the
+  reader needs to persist last-read reference, font/theme settings, and a
+  pending-highlight-request queue (a real feature worth porting - if a user
+  taps "highlight" while signed out or before granting the `highlights`
+  permission, Kotlin/RN-Expo queue the request and replay it once
+  sign-in/consent completes, surviving process death). None of that goes
+  through a bundled storage engine - the reader package will define a small
+  `YouVersionReaderStorage` interface and let the host app implement it.
+- **Fonts by injection, not bundled**: the official SDKs ship a proprietary
+  "Untitled Serif" display font (+ "Aktiv Grotesk"/Inter for UI chrome).
+  Not bundling third-party font files/licenses into this package - accept a
+  font family/`TextStyle` via theme injection instead (mirrors Kotlin's
+  `FontDefinitionProvider` escape hatch), falling back to the system font.
+- Full planned package/file structure lives in this session's plan file
+  (not repo-tracked) - re-derive or ask for it when implementation actually
+  starts; this entry is the durable "why", not the file-by-file "what".
 - **Repo name**: `youversion-platform-sdk-dart` - kept generic/monorepo-shaped
   on purpose, matching how the official repos are named differently from
   the packages they contain (e.g. repo `platform-sdk-react` ships npm
