@@ -7,6 +7,8 @@ multiple published packages under `packages/`.
 
 Not affiliated with, endorsed by, or maintained by YouVersion/Life.Church.
 
+Repo: <https://github.com/samuelalvesg/youversion-platform-sdk-dart>
+
 ## Packages
 
 | Package | Path | Status |
