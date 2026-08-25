@@ -27,7 +27,6 @@
   "pasteCallbackInstructions": "A browser window opened. After you finish signing in, it redirects to a page this example doesn't control - paste the resulting URL from your browser's address bar below (the page itself may fail to load, that's expected; the \"code\" is in the URL either way).",
   "completeSignInButton": "Complete sign-in",
   "signInToSyncMessage": "Sign in from the \"Sign In\" section to sync highlights.",
-  "changeButton": "Change language/version",
   "filterByCountryTitle": "Filter by country?",
   "endOfListLabel": "End of list",
   "loadMoreButton": "Load more",
@@ -85,5 +84,7 @@
   "verseSectionLabel": "Verse",
   "waitingForBrowserMessage": "Waiting for the browser...",
   "autoSignInButton": "Sign in (opens browser automatically)",
-  "pickDateButton": "Pick a date"
+  "pickDateButton": "Pick a date",
+  "previousChapterButton": "Previous chapter",
+  "nextChapterButton": "Next chapter"
 }

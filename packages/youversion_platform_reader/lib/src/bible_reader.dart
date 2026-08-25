@@ -416,7 +416,15 @@ class _BibleReaderState extends State<BibleReader> {
                   child: BibleTextView(
                     content: passage.content,
                     chapterId: _controller.chapterId,
-                    footer: _controller.bible.readerFooter,
+                    // `copyright`, not `readerFooter` (`info`) - confirmed
+                    // live against 3 real bibles (206/WEBUS, 1/KJV,
+                    // 111/NIV), `info` is `null` for every one of them,
+                    // `copyright` is the field that's actually populated
+                    // (public-domain bibles like WEBUS/KJV still return
+                    // `null` there too - nothing to show, correctly no
+                    // footer). Falls back to `readerFooter` in case some
+                    // other bible ever populates only that one instead.
+                    footer: _controller.bible.copyright ?? _controller.bible.readerFooter,
                     selectedVerseIds: {if (_controller.selectedVerseId != null) _controller.selectedVerseId!},
                     highlightsByVerseId: _controller.verseHighlights,
                     isRightToLeft: _controller.bible.isRightToLeft,

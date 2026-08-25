@@ -18,6 +18,12 @@ import 'package:flutter/gestures.dart';
 /// framework-recognized [TapGestureRecognizer] instead: start a timer on
 /// `onTapDown`, and in `onTapUp` fire [onLongPress] if the timer already
 /// elapsed, [onTap] otherwise.
+///
+/// Also wires [onLongPress] to the right mouse button
+/// (`onSecondaryTapUp`) - same [TapGestureRecognizer] instance handles
+/// both buttons natively, no extra recognizer needed. Right-click fires
+/// [onLongPress] immediately (no timer), a desktop-native alternative to
+/// press-and-hold for opening the same context menu.
 TapGestureRecognizer verseTapLongPressRecognizer({VoidCallback? onTap, VoidCallback? onLongPress}) {
   final recognizer = TapGestureRecognizer();
   Timer? longPressTimer;
@@ -36,6 +42,7 @@ TapGestureRecognizer verseTapLongPressRecognizer({VoidCallback? onTap, VoidCallb
     if (!longPressFired) onTap?.call();
   };
   recognizer.onTapCancel = () => longPressTimer?.cancel();
+  recognizer.onSecondaryTapUp = (_) => onLongPress?.call();
 
   return recognizer;
 }

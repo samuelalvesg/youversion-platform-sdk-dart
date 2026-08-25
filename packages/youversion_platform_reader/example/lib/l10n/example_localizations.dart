@@ -225,12 +225,6 @@ abstract class ExampleLocalizations {
   /// **'Sign in from the \"Sign In\" section to sync highlights.'**
   String get signInToSyncMessage;
 
-  /// No description provided for @changeButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Change language/version'**
-  String get changeButton;
-
   /// No description provided for @filterByCountryTitle.
   ///
   /// In en, this message translates to:
@@ -416,6 +410,18 @@ abstract class ExampleLocalizations {
   /// In en, this message translates to:
   /// **'Pick a date'**
   String get pickDateButton;
+
+  /// No description provided for @previousChapterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous chapter'**
+  String get previousChapterButton;
+
+  /// No description provided for @nextChapterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Next chapter'**
+  String get nextChapterButton;
 }
 
 class _ExampleLocalizationsDelegate

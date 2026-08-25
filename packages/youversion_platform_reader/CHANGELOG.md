@@ -1,5 +1,14 @@
 ## Unreleased
 
+- **Fixed a real bug**: `BibleReader` wired `BibleTextView.footer` to
+  `Bible.readerFooter` (JSON field `info`), which is `null` for every
+  real bible checked live (WEBUS, KJV, NIV) - no copyright/publisher
+  credit ever actually showed below the last verse. Now uses
+  `Bible.copyright ?? Bible.readerFooter` - `copyright` is the field
+  that's genuinely populated (e.g. NIV's full legal credit; still
+  correctly absent for public-domain bibles like WEBUS/KJV). See
+  `docs/DECISIONS.md`.
+
 - Added `ReadingThemeScope` (public, exported) - extracted from
   `BibleReader.build()` so other widgets rendering scripture can apply
   the same reading theme without duplicating the `ThemeData` construction.

@@ -81,6 +81,32 @@ void main() {
     expect(tappedVerseId, isNull);
   });
 
+  testWidgets('right-clicking a verse calls onVerseLongPress, same as long-press', (tester) async {
+    String? tappedVerseId;
+    String? longPressedVerseId;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BibleTextView(
+            content: content,
+            chapterId: 'JHN.3',
+            onVerseTap: (id) => tappedVerseId = id,
+            onVerseLongPress: (id) => longPressedVerseId = id,
+          ),
+        ),
+      ),
+    );
+
+    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final recognizer = span.recognizer as TapGestureRecognizer;
+    // Right mouse button - no long-press timing involved, fires
+    // immediately via the same recognizer's `onSecondaryTapUp`.
+    recognizer.onSecondaryTapUp!(TapUpDetails(kind: PointerDeviceKind.mouse));
+
+    expect(longPressedVerseId, 'JHN.3.16');
+    expect(tappedVerseId, isNull);
+  });
+
   testWidgets('tapping a footnote marker calls onFootnoteTap, not onVerseTap', (tester) async {
     String? tappedFootnote;
     var verseTapped = false;

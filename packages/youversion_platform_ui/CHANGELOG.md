@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Right-clicking a verse (`onSecondaryTapUp`) now also fires
+  `onVerseLongPress` - a desktop-native alternative to press-and-hold for
+  opening the same context menu, on the same `TapGestureRecognizer`
+  already used for tap/long-press (no extra recognizer needed).
+
 - **Breaking**: `BibleTextView.selectedVerseId` (`String?`) replaced by
   `selectedVerseIds` (`Set<String>`) - supports multi-select (tap several
   verses, act on all of them). Added `onVerseLongPress`, separate from

@@ -1179,6 +1179,115 @@ Not confirmed whether `getDay` resolves across a year boundary (e.g. day
 `maximumDate`/`firstDate`/`lastDate` are clamped to the currently-selected
 year rather than assuming either way.
 
+## 2026-08-24 (cont. 13): right-click as an alternative to long-press
+
+`verseTapLongPressRecognizer` (`_ui`, `rendering/verse_gesture_recognizer.dart`)
+already hand-rolls tap-vs-long-press timing on top of a real
+`TapGestureRecognizer` (custom `GestureRecognizer` subclasses crash
+`RenderParagraph`'s semantics-tree assembly - see cont. 9/earlier).
+Requested: besides press-and-hold, let a mouse right-click also open the
+verse context menu - a purely desktop-native gesture, no touch/mobile
+equivalent expected.
+
+`TapGestureRecognizer` already supports the secondary mouse button
+natively via `onSecondaryTapUp`/`onSecondaryTapDown`/`onSecondaryTapCancel`
+on the *same* recognizer instance already wired for primary-button
+tap/long-press - no second recognizer needed. Wired
+`recognizer.onSecondaryTapUp = (_) => onLongPress?.call()`: right-click
+fires the exact same callback long-press does, immediately (no timer),
+since it's meant as an alternative trigger for the identical action, not
+a separate new one.
+
+## 2026-08-24 (cont. 14): Bible Explorer header - pinned, version name as its own "change" button
+
+Two related UX requests on the Bible Explorer page:
+
+1. The Version / Book / Chapter / Verse header row should stay visible
+   while scrolling the passage text below, not scroll away with it (it
+   used to live inside the same `ListView` as the passage).
+2. Remove the separate "Trocar idioma/versão" button - the version name
+   text itself (where it already shows the current Bible's title) becomes
+   the tappable control that opens the language/version picker.
+
+Fixed by splitting `build()`'s single scrolling `ListView` into a
+`Column`: a non-scrolling `Padding` at the top holding the version
+row + the Book|Chapter|Verse segmented picker (and its expanded chip
+list, when a section is open) - always on screen regardless of how far
+the passage text below is scrolled - and an `Expanded(child: ListView(...))`
+below it holding only the chapter passage (`BibleTextView`) and its
+error/loading states. The version `Text` became a left-aligned
+`TextButton` wrapping `_pickLanguage`; the old `TextButton(child:
+Text(strings.changeButton))` was removed, and `changeButton` dropped from both `ExampleLocalizations` ARB
+locales (`example_en.arb`/`example_pt.arb` - this app's own strings are
+en/pt-only, see earlier decision) since nothing references it anymore;
+`flutter gen-l10n` regenerated the `.dart` delegates from the edited ARBs
+rather than hand-editing the generated files.
+
+## 2026-08-24 (cont. 15): previous/next chapter buttons around the passage
+
+Bible Explorer already caches nothing about the book's chapter order -
+the chapter chip list fetched `listChapters` fresh every time that
+section expanded. Requested: a "previous chapter" button above the
+passage and a "next chapter" one below it.
+
+Fetched `listChapters` once per book instead, in `_openBook`/
+`_restorePosition` (stored in new `_chapters` state), reused by both the
+chapter chip `Wrap` (no more redundant `FutureBuilder` fetch) and a new
+`_chapterAtOffset(delta)` lookup (index of `_chapter` in `_chapters`,
+±1, bounds-checked). `_ChapterNavButton` renders nothing
+(`SizedBox.shrink`) at either end of the book - no wraparound into an
+adjacent book, out of scope here - otherwise a full-width
+`OutlinedButton.icon` that calls the existing `_openChapter`. New ARB
+keys `previousChapterButton`/`nextChapterButton` (en/pt only, same as
+the rest of `ExampleLocalizations`).
+
+## 2026-08-24 (cont. 16): reader footer wired to the wrong field - `info` vs `copyright`
+
+Reported: no copyright/credit text ever shows below the last verse in
+either the Reader or Bible Explorer, despite `BibleTextView.footer`
+already being wired (`bible_reader.dart:419`, `bible_explorer_page.dart`
+footer:) and `BibleTextView` already rendering it when non-empty
+(`bible_text_view.dart:203-206`, `caption` style, 11pt - small but
+present by design, matching the Kotlin SDK's own type scale).
+
+Root-caused live: curled `GET /v1/bibles/{id}` (`X-YVP-App-Key`,
+`api.youversion.com`) for 3 real bibles (206/WEBUS, 1/KJV, 111/NIV).
+`info` (mapped to `Bible.readerFooter`, the field the footer was wired
+to) is `null` for **all three** - never populated in practice, not just
+for these particular ones. `copyright` (already a separate parsed field,
+`Bible.copyright`, but never fed into `BibleTextView.footer` anywhere)
+*is* populated when there's real legal text to show - NIV's full
+"Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.®..." credit came
+back verbatim; WEBUS/KJV correctly return `null` there too (genuinely
+public domain, nothing to credit).
+
+Fixed both call sites to `bible.copyright ?? bible.readerFooter` - prefer
+the field that's actually populated, keep `readerFooter` as a fallback in
+case some other bible ever populates only that one instead (never
+observed, but the field exists in the API contract, so not assuming it
+never will). Not a change to the earlier cont. 10 decision (no full
+copyright line in *share text*) - that was specifically about not
+bloating a copy/share payload with a paragraph of legal boilerplate; this
+is the reading screen's own persistent credit line, shown once, exactly
+where real Bible apps put it.
+
+## 2026-08-24 (cont. 17): prev/next chapter buttons land at the end/top, not wherever the scroll happened to be
+
+The prev/next chapter buttons added in cont. 15 called `_openChapter`
+directly - the passage's own `ListView` kept whatever scroll offset it
+was already at, so "next chapter" could land mid-scroll into the new
+chapter instead of at its top, and "previous" likewise. Requested:
+"next" should land at the top of the new chapter, "previous" at its end.
+
+Added a `ScrollController` (`_passageScrollController`) to the passage
+`ListView` and two thin wrappers, `_goToNextChapter`/
+`_goToPreviousChapter`, that `await _openChapter` then
+`jumpTo(0)`/`jumpTo(maxScrollExtent)` inside a post-frame callback - not
+immediately after the `await`, since `_openChapterPassage`'s `setState`
+only *schedules* the rebuild; jumping before that frame's layout runs
+would read the *old* chapter's `maxScrollExtent`. `addPostFrameCallback`
+guarantees the new chapter's `BibleTextView` has already been laid out.
+
 ## Where to log future changes
 
 - **`packages/youversion_platform_core/CHANGELOG.md`**: what changed, per

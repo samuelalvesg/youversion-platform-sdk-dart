@@ -81,9 +81,6 @@ class ExampleLocalizationsEn extends ExampleLocalizations {
       'Sign in from the \"Sign In\" section to sync highlights.';
 
   @override
-  String get changeButton => 'Change language/version';
-
-  @override
   String get filterByCountryTitle => 'Filter by country?';
 
   @override
@@ -199,4 +196,10 @@ class ExampleLocalizationsEn extends ExampleLocalizations {
 
   @override
   String get pickDateButton => 'Pick a date';
+
+  @override
+  String get previousChapterButton => 'Previous chapter';
+
+  @override
+  String get nextChapterButton => 'Next chapter';
 }

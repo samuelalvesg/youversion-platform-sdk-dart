@@ -71,6 +71,7 @@ class BibleExplorerPage extends StatefulWidget {
 class _BibleExplorerPageState extends State<BibleExplorerPage> {
   Bible? _bible;
   BibleBook? _book;
+  List<BibleChapter>? _chapters;
   BibleChapter? _chapter;
   BibleVerse? _verse;
   BiblePassage? _chapterPassage;
@@ -80,6 +81,14 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
   Map<String, String> _verseHighlights = const {};
   final String _displayLocale = 'en';
   _ExplorerSection? _expandedSection = _ExplorerSection.book;
+  // Controls the passage's own `ListView` (not `BibleTextView` itself,
+  // which is a plain non-scrolling `Column`) - prev/next chapter buttons
+  // jump this to the bottom/top respectively once the new chapter has
+  // loaded, per explicit ask: "next" should land reading at the top of
+  // the new chapter, "previous" at its end (as if scrolling backwards
+  // into it), rather than keeping whatever scroll offset the old chapter
+  // was left at.
+  final _passageScrollController = ScrollController();
 
   late final ReaderSettingsStorage _settingsStorage;
   late final PendingHighlightQueue _pendingQueue;
@@ -92,6 +101,12 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
     _settingsStorage = ReaderSettingsStorage(widget.storage);
     _pendingQueue = PendingHighlightQueue(widget.storage);
     _init();
+  }
+
+  @override
+  void dispose() {
+    _passageScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -135,6 +150,7 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
       final saved = jsonDecode(raw) as Map<String, dynamic>;
       final bible = await widget.content.getBible(saved['bible_id'] as int);
       final book = await widget.content.getBook(bibleId: bible.id, bookUsfm: saved['book_id'] as String);
+      final chapters = await widget.content.listChapters(bibleId: bible.id, bookUsfm: book.id);
       final chapter = await widget.content.getChapter(
         bibleId: bible.id,
         bookUsfm: book.id,
@@ -144,6 +160,7 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
       setState(() {
         _bible = bible;
         _book = book;
+        _chapters = chapters;
         _chapter = chapter;
         _isRestoring = false;
         // Everything already picked - start fully collapsed, straight to
@@ -294,9 +311,15 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
   Future<void> _openBook(BibleBook summary) async {
     try {
       final book = await widget.content.getBook(bibleId: _bible!.id, bookUsfm: summary.id);
+      // Fetched once here (not just by the chapter chip list's own
+      // `FutureBuilder`) so the prev/next chapter buttons around the
+      // passage below always have the book's full chapter order to hand,
+      // regardless of whether the chapter section has ever been expanded.
+      final chapters = await widget.content.listChapters(bibleId: _bible!.id, bookUsfm: book.id);
       if (!mounted) return;
       setState(() {
         _book = book;
+        _chapters = chapters;
         _chapter = null;
         _verse = null;
         _chapterPassage = null;
@@ -324,6 +347,44 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
     } catch (error) {
       _showError(error);
     }
+  }
+
+  // Previous/next chapter buttons around the passage - looks up the
+  // current chapter's index in the cached `_chapters` (same list the book's
+  // chapter chips use, fetched once in `_openBook`/`_restorePosition`) and
+  // opens the neighboring one. `null` at either end of the book (no
+  // wraparound into the next/previous book - out of scope here).
+  BibleChapter? _chapterAtOffset(int delta) {
+    final chapters = _chapters;
+    final chapter = _chapter;
+    if (chapters == null || chapter == null) return null;
+    final index = chapters.indexWhere((c) => c.id == chapter.id);
+    final targetIndex = index + delta;
+    if (index == -1 || targetIndex < 0 || targetIndex >= chapters.length) return null;
+    return chapters[targetIndex];
+  }
+
+  // "Next chapter" lands at the top (start reading from its beginning),
+  // "previous chapter" at the bottom (its end, as if having scrolled
+  // backwards into it) - `_openChapter` itself doesn't touch scroll
+  // position, so the jump only happens once the new chapter's passage has
+  // actually loaded and been laid out (`addPostFrameCallback`, after the
+  // `setState` inside `_openChapterPassage` triggers a rebuild) - jumping
+  // any earlier would use the *old* chapter's `maxScrollExtent`.
+  Future<void> _goToNextChapter(BibleChapter chapter) async {
+    await _openChapter(chapter);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_passageScrollController.hasClients) _passageScrollController.jumpTo(0);
+    });
+  }
+
+  Future<void> _goToPreviousChapter(BibleChapter chapter) async {
+    await _openChapter(chapter);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_passageScrollController.hasClients) {
+        _passageScrollController.jumpTo(_passageScrollController.position.maxScrollExtent);
+      }
+    });
   }
 
   // Shows the whole chapter, like `BibleReader` does - not just a single
@@ -586,162 +647,238 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
     if (_isRestoring || bible == null) return const Center(child: CircularProgressIndicator());
     final strings = ExampleLocalizations.of(context);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
       children: [
-        Row(
-          children: [
-            Expanded(child: Text(bible.title ?? bible.abbreviation ?? '${bible.id}')),
-            IconButton(
-              icon: const Icon(Icons.text_fields),
-              tooltip: strings.fontSettingsTooltip,
-              onPressed: _openFontSettings,
-            ),
-            TextButton(onPressed: _pickLanguage, child: Text(strings.changeButton)),
-          ],
-        ),
-        const Divider(),
-        // Segmented Book | Chapter | Verse header - only the tapped
-        // section's chip list shows below (not all 3 stacked at once),
-        // and picking an item auto-advances to the next section
-        // (collapsing everything once a verse is picked) - requested
-        // explicitly, "melhor para UX" than always showing every level's
-        // full chip list at once.
-        Row(
-          children: [
-            Expanded(
-              child: _SectionButton(
-                label: _book?.title ?? _book?.id ?? strings.bookSectionLabel,
-                expanded: _expandedSection == _ExplorerSection.book,
-                onPressed: () => setState(
-                  () => _expandedSection = _expandedSection == _ExplorerSection.book ? null : _ExplorerSection.book,
-                ),
-              ),
-            ),
-            Expanded(
-              child: _SectionButton(
-                label: _chapter?.title ?? _chapter?.id ?? strings.chapterSectionLabel,
-                expanded: _expandedSection == _ExplorerSection.chapter,
-                onPressed: _book == null
-                    ? null
-                    : () => setState(
-                          () => _expandedSection =
-                              _expandedSection == _ExplorerSection.chapter ? null : _ExplorerSection.chapter,
-                        ),
-              ),
-            ),
-            Expanded(
-              child: _SectionButton(
-                label: _verse?.title ?? _verse?.id ?? strings.verseSectionLabel,
-                expanded: _expandedSection == _ExplorerSection.verse,
-                onPressed: _chapter == null
-                    ? null
-                    : () => setState(
-                          () => _expandedSection =
-                              _expandedSection == _ExplorerSection.verse ? null : _ExplorerSection.verse,
-                        ),
-              ),
-            ),
-          ],
-        ),
-        if (_expandedSection == _ExplorerSection.book) ...[
-          const SizedBox(height: 8),
-          FutureBuilder<List<BibleBook>>(
-            future: widget.content.listBooks(bible.id),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) return ErrorRetry(error: snapshot.error!, onRetry: () => setState(() {}));
-              final books = snapshot.data;
-              if (books == null) return const Center(child: CircularProgressIndicator());
-              return Wrap(
-                spacing: 8,
-                runSpacing: 8,
+        // Version + Book/Chapter/Verse header stays pinned above the
+        // scrollable passage below, not inside the same `ListView` -
+        // requested explicitly, always visible instead of scrolling out of
+        // view with the passage text. The version name itself is now the
+        // "change" control (tapping it opens the language/version picker,
+        // `_pickLanguage`) - the separate "Trocar idioma/versão" button
+        // was removed as redundant with it.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  for (final book in books)
-                    ChoiceChip(
-                      label: Text(book.title ?? book.id),
-                      selected: _book?.id == book.id,
-                      onSelected: (_) => _openBook(book),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(alignment: Alignment.centerLeft, padding: EdgeInsets.zero),
+                      onPressed: _pickLanguage,
+                      child: Text(bible.title ?? bible.abbreviation ?? '${bible.id}'),
                     ),
-                ],
-              );
-            },
-          ),
-        ] else if (_expandedSection == _ExplorerSection.chapter) ...[
-          const SizedBox(height: 8),
-          FutureBuilder<List<BibleChapter>>(
-            future: widget.content.listChapters(bibleId: bible.id, bookUsfm: _book!.id),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) return ErrorRetry(error: snapshot.error!, onRetry: () => setState(() {}));
-              final chapters = snapshot.data;
-              if (chapters == null) return const Center(child: CircularProgressIndicator());
-              return Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final chapter in chapters)
-                    ChoiceChip(
-                      label: Text(chapter.title ?? chapter.id),
-                      selected: _chapter?.id == chapter.id,
-                      onSelected: (_) => _openChapter(chapter),
-                    ),
-                ],
-              );
-            },
-          ),
-        ] else if (_expandedSection == _ExplorerSection.verse) ...[
-          const SizedBox(height: 8),
-          FutureBuilder<List<BibleVerse>>(
-            future: widget.content.listVerses(bibleId: bible.id, bookUsfm: _book!.id, chapterId: _chapter!.id),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) return ErrorRetry(error: snapshot.error!, onRetry: () => setState(() {}));
-              final verses = snapshot.data;
-              if (verses == null) return const Center(child: CircularProgressIndicator());
-              return Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final verse in verses)
-                    ChoiceChip(
-                      label: Text(verse.title ?? verse.id),
-                      selected: _verse?.id == verse.id,
-                      onSelected: (_) => _openVerse(verse),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
-        if (_chapterPassageError != null) ...[
-          const SizedBox(height: 16),
-          ErrorRetry(error: _chapterPassageError!, onRetry: () => _openChapterPassage(_flashVerseId)),
-        ] else if (_chapterPassage != null) ...[
-          const SizedBox(height: 16),
-          Text(_chapterPassage!.reference, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          ReadingThemeScope(
-            fontSettings: _fontSettings,
-            child: Builder(
-              builder: (context) {
-                return Container(
-                  color: ReaderColorScheme.of(context).readingCanvas,
-                  padding: const EdgeInsets.all(12),
-                  child: BibleTextView(
-                    content: _chapterPassage!.content,
-                    chapterId: _chapter!.passageId ?? _chapter!.id,
-                    footer: bible.readerFooter,
-                    selectedVerseIds: {..._selectedVerseIds, if (_flashVerseId != null) _flashVerseId!},
-                    highlightsByVerseId: _verseHighlights,
-                    scrollToVerseId: _flashVerseId,
-                    isRightToLeft: bible.isRightToLeft,
-                    onVerseTap: _onVerseTapped,
-                    onVerseLongPress: _onVerseLongPressed,
                   ),
-                );
-              },
-            ),
+                  IconButton(
+                    icon: const Icon(Icons.text_fields),
+                    tooltip: strings.fontSettingsTooltip,
+                    onPressed: _openFontSettings,
+                  ),
+                ],
+              ),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              // Segmented Book | Chapter | Verse header - only the tapped
+              // section's chip list shows below (not all 3 stacked at
+              // once), and picking an item auto-advances to the next
+              // section (collapsing everything once a verse is picked) -
+              // requested explicitly, "melhor para UX" than always showing
+              // every level's full chip list at once.
+              Row(
+                children: [
+                  Expanded(
+                    child: _SectionButton(
+                      label: _book?.title ?? _book?.id ?? strings.bookSectionLabel,
+                      expanded: _expandedSection == _ExplorerSection.book,
+                      onPressed: () => setState(
+                        () =>
+                            _expandedSection = _expandedSection == _ExplorerSection.book ? null : _ExplorerSection.book,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _SectionButton(
+                      label: _chapter?.title ?? _chapter?.id ?? strings.chapterSectionLabel,
+                      expanded: _expandedSection == _ExplorerSection.chapter,
+                      onPressed: _book == null
+                          ? null
+                          : () => setState(
+                                () => _expandedSection =
+                                    _expandedSection == _ExplorerSection.chapter ? null : _ExplorerSection.chapter,
+                              ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _SectionButton(
+                      label: _verse?.title ?? _verse?.id ?? strings.verseSectionLabel,
+                      expanded: _expandedSection == _ExplorerSection.verse,
+                      onPressed: _chapter == null
+                          ? null
+                          : () => setState(
+                                () => _expandedSection =
+                                    _expandedSection == _ExplorerSection.verse ? null : _ExplorerSection.verse,
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_expandedSection == _ExplorerSection.book) ...[
+                const SizedBox(height: 8),
+                FutureBuilder<List<BibleBook>>(
+                  future: widget.content.listBooks(bible.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) return ErrorRetry(error: snapshot.error!, onRetry: () => setState(() {}));
+                    final books = snapshot.data;
+                    if (books == null) return const Center(child: CircularProgressIndicator());
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final book in books)
+                          ChoiceChip(
+                            label: Text(book.title ?? book.id),
+                            selected: _book?.id == book.id,
+                            onSelected: (_) => _openBook(book),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ] else if (_expandedSection == _ExplorerSection.chapter) ...[
+                const SizedBox(height: 8),
+                if (_chapters == null)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final chapter in _chapters!)
+                        ChoiceChip(
+                          label: Text(chapter.title ?? chapter.id),
+                          selected: _chapter?.id == chapter.id,
+                          onSelected: (_) => _openChapter(chapter),
+                        ),
+                    ],
+                  ),
+              ] else if (_expandedSection == _ExplorerSection.verse) ...[
+                const SizedBox(height: 8),
+                FutureBuilder<List<BibleVerse>>(
+                  future: widget.content.listVerses(bibleId: bible.id, bookUsfm: _book!.id, chapterId: _chapter!.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) return ErrorRetry(error: snapshot.error!, onRetry: () => setState(() {}));
+                    final verses = snapshot.data;
+                    if (verses == null) return const Center(child: CircularProgressIndicator());
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final verse in verses)
+                          ChoiceChip(
+                            label: Text(verse.title ?? verse.id),
+                            selected: _verse?.id == verse.id,
+                            onSelected: (_) => _openVerse(verse),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+              const Divider(height: 1),
+            ],
           ),
-        ],
+        ),
+        Expanded(
+          child: ListView(
+            controller: _passageScrollController,
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (_chapterPassageError != null)
+                ErrorRetry(error: _chapterPassageError!, onRetry: () => _openChapterPassage(_flashVerseId))
+              else if (_chapterPassage != null) ...[
+                _ChapterNavButton(
+                  chapter: _chapterAtOffset(-1),
+                  label: strings.previousChapterButton,
+                  icon: Icons.arrow_upward,
+                  onPressed: _goToPreviousChapter,
+                ),
+                const SizedBox(height: 8),
+                Text(_chapterPassage!.reference, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                ReadingThemeScope(
+                  fontSettings: _fontSettings,
+                  child: Builder(
+                    builder: (context) {
+                      return Container(
+                        color: ReaderColorScheme.of(context).readingCanvas,
+                        padding: const EdgeInsets.all(12),
+                        child: BibleTextView(
+                          content: _chapterPassage!.content,
+                          chapterId: _chapter!.passageId ?? _chapter!.id,
+                          // See `BibleReader`'s own doc comment on this
+                          // same choice - `copyright` is the field that's
+                          // actually populated live, `readerFooter`
+                          // (`info`) never was across every bible checked.
+                          footer: bible.copyright ?? bible.readerFooter,
+                          selectedVerseIds: {..._selectedVerseIds, if (_flashVerseId != null) _flashVerseId!},
+                          highlightsByVerseId: _verseHighlights,
+                          scrollToVerseId: _flashVerseId,
+                          isRightToLeft: bible.isRightToLeft,
+                          onVerseTap: _onVerseTapped,
+                          onVerseLongPress: _onVerseLongPressed,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _ChapterNavButton(
+                  chapter: _chapterAtOffset(1),
+                  label: strings.nextChapterButton,
+                  icon: Icons.arrow_downward,
+                  onPressed: _goToNextChapter,
+                  iconAfterLabel: true,
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+/// Previous/next chapter button around the passage - hidden entirely
+/// (`SizedBox.shrink`) at either end of the book, rather than shown
+/// disabled, since there's no next book/wraparound to fall back to here.
+class _ChapterNavButton extends StatelessWidget {
+  const _ChapterNavButton({
+    required this.chapter,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.iconAfterLabel = false,
+  });
+
+  final BibleChapter? chapter;
+  final String label;
+  final IconData icon;
+  final ValueChanged<BibleChapter> onPressed;
+  final bool iconAfterLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final chapter = this.chapter;
+    if (chapter == null) return const SizedBox.shrink();
+    final iconWidget = Icon(icon, size: 18);
+    final labelWidget = Text(label);
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => onPressed(chapter),
+        icon: iconAfterLabel ? labelWidget : iconWidget,
+        label: iconAfterLabel ? iconWidget : labelWidget,
+      ),
     );
   }
 }

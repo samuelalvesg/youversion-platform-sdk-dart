@@ -81,9 +81,6 @@ class ExampleLocalizationsPt extends ExampleLocalizations {
       'Entre na seção \"Entrar\" pra sincronizar marcações.';
 
   @override
-  String get changeButton => 'Trocar idioma/versão';
-
-  @override
   String get filterByCountryTitle => 'Filtrar por país?';
 
   @override
@@ -199,4 +196,10 @@ class ExampleLocalizationsPt extends ExampleLocalizations {
 
   @override
   String get pickDateButton => 'Escolher data';
+
+  @override
+  String get previousChapterButton => 'Capítulo anterior';
+
+  @override
+  String get nextChapterButton => 'Próximo capítulo';
 }
