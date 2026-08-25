@@ -15,6 +15,17 @@ import '../settings/reader_theme.dart';
 /// elsewhere (the sheet lives in a separate route), so without local state
 /// the chip/swatch selection rings would never visually update on tap even
 /// though [onChanged] does fire and the underlying settings do change.
+///
+/// Resyncs that local copy from [settings] on every widget update
+/// (`didUpdateWidget`), not just at construction - a host embedding this
+/// sheet alongside its own sibling controls (e.g. a font-family picker
+/// above it, `ReaderSettingsSheet` in bible_with_me) can pass a newly
+/// updated [settings] value back down after one of *those* controls
+/// changes something. Without resyncing, this widget's stale local copy
+/// becomes the base for its own next `copyWith` call, silently reverting
+/// whatever the sibling control had just changed (confirmed live: toggling
+/// Bionic Reading reverted a just-picked font family back to whatever it
+/// was when this sheet first mounted).
 class FontSettingsSheet extends StatefulWidget {
   const FontSettingsSheet({super.key, required this.settings, required this.onChanged});
 
@@ -27,6 +38,12 @@ class FontSettingsSheet extends StatefulWidget {
 
 class _FontSettingsSheetState extends State<FontSettingsSheet> {
   late ReaderFontSettings _settings = widget.settings;
+
+  @override
+  void didUpdateWidget(covariant FontSettingsSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _settings = widget.settings;
+  }
 
   void _update(ReaderFontSettings next) {
     setState(() => _settings = next);
