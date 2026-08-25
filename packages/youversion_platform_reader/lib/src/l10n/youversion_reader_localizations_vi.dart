@@ -54,6 +54,12 @@ class YouVersionReaderLocalizationsVi extends YouVersionReaderLocalizations {
   String get themeCream => 'Cream';
 
   @override
+  String get themeMint => 'Mint';
+
+  @override
+  String get themeSkyBlue => 'Sky Blue';
+
+  @override
   String get themeCharcoal => 'Charcoal';
 
   @override
@@ -61,6 +67,12 @@ class YouVersionReaderLocalizationsVi extends YouVersionReaderLocalizations {
 
   @override
   String get themeTrueBlack => 'True Black';
+
+  @override
+  String get themeGraphite => 'Graphite';
+
+  @override
+  String get themeForestNight => 'Forest Night';
 
   @override
   String get changeVersionTooltip => 'Thay đổi phiên bản Kinh Thánh';

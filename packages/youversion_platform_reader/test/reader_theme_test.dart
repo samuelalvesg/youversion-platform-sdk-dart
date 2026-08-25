@@ -2,18 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:youversion_platform_reader/youversion_platform_reader.dart';
 
 void main() {
-  test('7 presets, 4 light + 3 dark, matching Kotlin ReaderThemes.kt', () {
-    expect(ReaderTheme.values, hasLength(7));
+  test('11 presets, 6 light + 5 dark - 7 matching Kotlin ReaderThemes.kt plus 4 extras', () {
+    expect(ReaderTheme.values, hasLength(11));
     expect(ReaderTheme.values.where((t) => !t.isDark), [
       ReaderTheme.pureWhite,
       ReaderTheme.sepia,
       ReaderTheme.paperGray,
       ReaderTheme.cream,
+      ReaderTheme.mint,
+      ReaderTheme.skyBlue,
     ]);
     expect(ReaderTheme.values.where((t) => t.isDark), [
       ReaderTheme.charcoal,
       ReaderTheme.midnightBlue,
       ReaderTheme.trueBlack,
+      ReaderTheme.graphite,
+      ReaderTheme.forestNight,
     ]);
   });
 

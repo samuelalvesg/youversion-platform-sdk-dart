@@ -213,6 +213,18 @@ abstract class YouVersionReaderLocalizations {
   /// **'Cream'**
   String get themeCream;
 
+  /// No description provided for @themeMint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mint'**
+  String get themeMint;
+
+  /// No description provided for @themeSkyBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky Blue'**
+  String get themeSkyBlue;
+
   /// No description provided for @themeCharcoal.
   ///
   /// In en, this message translates to:
@@ -230,6 +242,18 @@ abstract class YouVersionReaderLocalizations {
   /// In en, this message translates to:
   /// **'True Black'**
   String get themeTrueBlack;
+
+  /// No description provided for @themeGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get themeGraphite;
+
+  /// No description provided for @themeForestNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest Night'**
+  String get themeForestNight;
 
   /// No description provided for @changeVersionTooltip.
   ///

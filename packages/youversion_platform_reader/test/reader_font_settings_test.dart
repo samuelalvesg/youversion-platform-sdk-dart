@@ -5,8 +5,8 @@ void main() {
   group('nextSmallerFontSize / nextLargerFontSize', () {
     test('steps to the adjacent preset', () {
       const settings = ReaderFontSettings(fontSize: 15);
-      expect(settings.nextSmallerFontSize, 12);
-      expect(settings.nextLargerFontSize, 18);
+      expect(settings.nextSmallerFontSize, 14);
+      expect(settings.nextLargerFontSize, 16);
     });
 
     test('does not wrap past the smallest preset', () {
@@ -15,14 +15,14 @@ void main() {
     });
 
     test('does not wrap past the largest preset', () {
-      const settings = ReaderFontSettings(fontSize: 24);
-      expect(settings.nextLargerFontSize, 24);
+      const settings = ReaderFontSettings(fontSize: 32);
+      expect(settings.nextLargerFontSize, 32);
     });
 
     test('a non-preset size snaps to the nearest preset boundary', () {
-      const settings = ReaderFontSettings(fontSize: 16);
-      expect(settings.nextSmallerFontSize, 15);
-      expect(settings.nextLargerFontSize, 21);
+      const settings = ReaderFontSettings(fontSize: 17);
+      expect(settings.nextSmallerFontSize, 16);
+      expect(settings.nextLargerFontSize, 20);
     });
   });
 

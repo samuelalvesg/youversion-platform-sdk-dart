@@ -3,12 +3,14 @@ import 'reader_theme.dart';
 /// Reading font/spacing/theme preferences, persisted via
 /// [ReaderSettingsStorage].
 ///
-/// Sizes/spacings match the official readers' font-size setting
-/// (`ReaderFontSettings.kt`, Kotlin): sizes `[9, 12, 15, 18, 21, 24]`,
-/// line-height multipliers `[1.2, 1.5, 1.8]`. Font family is never one of
-/// these presets - it's injected via [ReaderFontSettings.fontFamily] (or
-/// left `null` for the system font), matching this package's
-/// font-by-injection-not-bundle principle.
+/// The original official-reader presets (`ReaderFontSettings.kt`, Kotlin)
+/// are sizes `[9, 12, 15, 18, 21, 24]`, line-height multipliers
+/// `[1.2, 1.5, 1.8]` - both lists below extend that range (more granular
+/// sizes, line-height up to 2.5) rather than replacing it, so a value
+/// saved under the original preset set still round-trips fine. Font
+/// family is never one of these presets - it's injected via
+/// [ReaderFontSettings.fontFamily] (or left `null` for the system font),
+/// matching this package's font-by-injection-not-bundle principle.
 class ReaderFontSettings {
   const ReaderFontSettings({
     this.fontSize = 15,
@@ -17,8 +19,8 @@ class ReaderFontSettings {
     this.theme = ReaderTheme.pureWhite,
   });
 
-  static const List<double> availableFontSizes = [9, 12, 15, 18, 21, 24];
-  static const List<double> availableLineHeights = [1.2, 1.5, 1.8];
+  static const List<double> availableFontSizes = [9, 10, 12, 14, 15, 16, 18, 20, 21, 24, 28, 32];
+  static const List<double> availableLineHeights = [1.0, 1.2, 1.35, 1.5, 1.65, 1.8, 2.0, 2.25, 2.5];
 
   final double fontSize;
   final double lineHeight;

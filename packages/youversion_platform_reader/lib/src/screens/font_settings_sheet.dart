@@ -39,9 +39,13 @@ class _FontSettingsSheetState extends State<FontSettingsSheet> {
       ReaderTheme.sepia => strings.themeSepia,
       ReaderTheme.paperGray => strings.themePaperGray,
       ReaderTheme.cream => strings.themeCream,
+      ReaderTheme.mint => strings.themeMint,
+      ReaderTheme.skyBlue => strings.themeSkyBlue,
       ReaderTheme.charcoal => strings.themeCharcoal,
       ReaderTheme.midnightBlue => strings.themeMidnightBlue,
       ReaderTheme.trueBlack => strings.themeTrueBlack,
+      ReaderTheme.graphite => strings.themeGraphite,
+      ReaderTheme.forestNight => strings.themeForestNight,
     };
   }
 
