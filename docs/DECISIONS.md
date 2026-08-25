@@ -1288,6 +1288,183 @@ only *schedules* the rebuild; jumping before that frame's layout runs
 would read the *old* chapter's `maxScrollExtent`. `addPostFrameCallback`
 guarantees the new chapter's `BibleTextView` has already been laid out.
 
+## 2026-08-25: in-flight request dedup + in-memory cache (`_core`)
+
+The user pointed at platform-sdk-kotlin's `bibles/domain/BibleVersionRepository.kt`
+directly (a `Map<Int, Deferred<BibleVersion>>` guarded by a `Mutex`,
+plus `bibles/domain/BibleChapterRepository.kt`/`BibleIntroRepository.kt`
+doing the identical thing for chapter/intro fetches): two concurrent
+calls for the same bible/chapter/passage fire only one real HTTP
+request, the second caller awaits the first's in-flight result instead
+of duplicating it. `YouVersionContentClient`/`YouVersionLanguagesClient`
+had nothing equivalent - confirmed live via 2 parallel `Explore` agents
+(one mapping every method's cache-candidacy, one sweeping the other
+reference SDKs for related gaps) that every call, even an identical
+concurrent one, fired its own request.
+
+**Not the same thing as the already-declined "HTTP caching layer" /
+"no offline content cache" item** (`BACKLOG.md`, `docs/DECISIONS.md`'s
+"storage-agnostic" principle near the `BibleVersionDownloadStatus` note)
+- that decision is specifically about Kotlin's *persistent*, on-device
+cache tiers (`persistentCache`/`temporaryCache`, survives app restart,
+this package's stance is that's the host app's job). This is a
+different, narrower thing: a plain in-memory `Map`, scoped to one client
+instance, cleared on `close()`, never touching disk. Doesn't reopen the
+prior decision.
+
+Implementation: a generic `_dedupedCached<T>(key, fetch)` helper on both
+clients (`Map<String, Object?> _cache` + `Map<String, Future<Object?>>
+_inFlight`) - checks the cache, then the in-flight map, else calls
+`fetch()` and stores the `Future` in `_inFlight` *before* the first
+`await` inside it runs. No `Mutex`/lock dependency needed for this,
+unlike Kotlin: Dart's event loop is single-threaded, so storing the
+`Future` synchronously in the map is enough to make a second synchronous
+call see it already there - there's no window for two `Future`s to be
+created for the same key. A failed fetch is never cached (only removed
+from `_inFlight`, via `whenComplete`), so a retry after an error fires a
+real request again.
+
+Scope, per the user's explicit ask (not just single-object methods):
+`getBible`/`getIndex`/`getPassage`/`getBook`/`getChapter`/`getVerse` (all
+keyed by their id/USFM parameters - Bible content is immutable per id in
+practice) and also `listBibles`/`listBooks`/`listChapters`/`listVerses`
+(keyed by their full parameter tuple, including `pageToken` where
+relevant, so different pages/filters get their own cache entry, never a
+false collision) on `YouVersionContentClient`; `getLanguage`/
+`listLanguages` (keyed including the `country` filter) on
+`YouVersionLanguagesClient`. `getPassage` alone covers book-intro content
+too (fetched via `passageId`, no separate intro method exists in this
+port unlike Kotlin's dedicated `BibleIntroRepository`), so no extra
+wiring was needed for that case.
+
+**Other, larger gaps found during the sweep, logged to `BACKLOG.md`
+(local, gitignored) rather than implemented here**:
+- Kotlin's `highlights/domain/BibleHighlightsRepository.kt` +
+  `BibleHighlightCache.kt` (~1200 lines) - a full offline-first sync
+  engine for highlights (optimistic writes, an operation queue with
+  exponential backoff, 403-reconciliation, per-chapter load dedup,
+  queue invalidation on account switch). `YouVersionHighlightsClient`
+  here is a thin stateless CRUD wrapper by comparison - a real, much
+  bigger gap, tracked separately, not attempted as part of this change.
+- React's `Users.ts` `inFlightCodeExchanges`/`inFlightRefresh` (dedup for
+  concurrent OAuth code-exchange/token-refresh calls, preventing a
+  single-use code/refresh-token from being spent twice) - only
+  corroborated by React, not Kotlin; lower priority since this SDK
+  doesn't yet do proactive expiry-driven auto-refresh for anything to
+  race on. Logged as an open item.
+- Kotlin's `YouVersionApi.hasValidToken()` (proactive expiry check +
+  auto-refresh) - folded into the already-declined "Token storage/
+  persistence" item's rationale rather than a new entry; it fundamentally
+  needs persisted expiry state this package leaves to the host app.
+
+## 2026-08-25 (cont. 2): `YouVersionHighlightsSyncEngine` - offline-first highlights sync
+
+Follow-up to the dedup gap-sweep above. `YouVersionHighlightsClient` was
+a thin stateless CRUD wrapper - no cache, no retry, no coordination.
+Kotlin's `highlights/domain/BibleHighlightsRepository.kt` +
+`BibleHighlightCache.kt` (~1200 lines combined) implement a real
+offline-first sync engine: optimistic local writes, a retry queue with
+exponential backoff, account-wide `403` handling that doesn't wedge the
+queue, per-chapter load throttling/dedup, and session-scoped
+invalidation. Investigated via 2 parallel `Explore` agents (one mapping
+the current Dart state, one reading Kotlin's implementation in full)
+before designing anything - full mechanics (backoff formula, generation
+guard, 403 handling, chapter throttle) confirmed against real Kotlin
+source, not summarized from memory.
+
+**Key finding that shaped the design**: Kotlin's `queuedOperations`
+(`MutableStateFlow<List<PendingHighlightOperation>>`) is *also* purely
+in-memory - explicitly documented in Kotlin's own comments as lost on
+process death. This isn't a gap relative to this repo's "storage-
+agnostic, no offline content cache" principle (see the cont. 1 entry
+above and the earlier `BibleVersionDownloadStatus` note) - it's the same
+principle, already satisfied. So `YouVersionHighlightsSyncEngine`
+(`packages/youversion_platform_core/lib/src/highlights/domain/
+youversion_highlights_sync_engine.dart`) is memory-only too, cleared on
+`close()`.
+
+**Resulting split, not a replacement**: `youversion_platform_reader`'s
+`PendingHighlightQueue` (persisted via `YouVersionReaderStorage`)
+already covers "app closed while signed out, resume later" - something
+Kotlin doesn't even attempt (no persisted state at all). The new engine
+covers a different concern: robustness *during* a running session -
+retry with backoff, not spamming `listHighlights` for the same chapter,
+not wedging the queue on a permission refusal, dropping zombie retries
+after a sign-out. Both stay, each doing the part the other doesn't.
+
+Adaptations from Kotlin to idiomatic Dart (documented in the class's own
+doc comment, not just here):
+- **No `Mutex`**: same reasoning as the content-client dedup work - the
+  event loop is single-threaded, and this engine's queue/cache mutations
+  are synchronous chunks between `await` points, so nothing needs a lock.
+- **No `StateFlow` per query**: Kotlin exposes `highlights`/
+  `pendingOperationCount`/`failedOperationCount` as separate reactive
+  streams. Dart uses one broadcast `Stream<void> changes` that fires on
+  any observable mutation; callers re-read synchronous getters
+  afterward. Simpler than building a mini-reactive-stream system, still
+  enough to drive a `setState`. A deliberate simplification, not a
+  missed port.
+- **No structured `BibleReference`**: this repo already decided not to
+  build USFM range parsing (`BACKLOG.md`). Operations key directly on
+  `bibleId`/`passageId` (verse-level USFM, e.g. `JHN.3.16` - the
+  vocabulary `YouVersionHighlightsClient` already uses) plus an explicit
+  `chapterId` parameter for the load-throttle key, passed by the caller
+  rather than parsed out of `passageId`.
+- **`Timer`/`Future` loop, not a coroutine `Job`**: `while(true)` +
+  `delay()` became a recursive `_processQueue` that `await`s
+  `Future.delayed(backoff)` between batches - same effect, no
+  `dart:isolate`/external package dependency.
+
+**One faithfully-preserved surprise**: `pendingOperationCount` reads `0`
+while a batch is claimed and in-flight, exactly like Kotlin's
+`queuedOperations.map { it.size }` - the processor empties the queue
+list the moment it claims a batch, before any `await` suspends. Confirmed
+live in this port's own tests (`hasPendingOperations`, not
+`pendingOperationCount`, is the one that stays `true` for the whole
+in-flight window - matches Kotlin's own `hasPendingOperations()` doc
+comment, which explicitly calls out the same gap for the same reason).
+
+**Simplification in the 403 handling**: Kotlin tracks a per-batch
+`rejectedReferences` list plus a separate `abandonRefusedWrites` pass
+with fine per-reference bookkeeping. This port collapses that to: on the
+first `notPermitted` in a batch, mark every remaining operation in that
+batch *and* anything left in the live queue as rejected (same end
+result - permission refusal is account-wide, not per-operation, so
+nothing partial should survive it), then trigger a `forceReload` on each
+distinct affected chapter. Functionally equivalent, less bookkeeping
+machinery.
+
+Not ported (deliberately out of scope, see `BACKLOG.md`): Kotlin's
+read-path `403` behavior of wiping the *entire* cache
+(`cache.clear()` on a chapter-load 403, not just a write 403) - not
+carried over here; a load 403 in this port just leaves that chapter's
+data as-is (stale-but-present) rather than nuking every other chapter's
+cache too. Revisit if this ever causes a real observed issue.
+
+**Wired into `BibleReader`** (`youversion_platform_reader`, same day):
+`_applyHighlight`/`_removeHighlight` previously called
+`YouVersionHighlightsClient` directly when signed in (no retry on
+failure - an exception there wasn't even caught) and only used
+`PendingHighlightQueue` when signed out. Both now route their signed-in
+write through the new engine's `setHighlight`/`removeHighlight` instead
+- fire-and-forget, matching the engine's own API (the optimistic
+`_controller.putVerseHighlight`/`removeVerseHighlight` call already
+present stays the UI's source of truth; the engine's own cache isn't
+consulted for rendering, only used for its sync bookkeeping). Also calls
+`reset()` on the sign-in→signed-out transition in `didUpdateWidget`
+(mirroring the existing sign-out→sign-in transition that already
+triggers `PendingHighlightQueue.replay`), so a retry still backing off
+from the old session is dropped instead of resent under a new session.
+
+**Not done, left for a follow-up** (`BACKLOG.md`):
+`PendingHighlightQueue.replay` still calls
+`YouVersionHighlightsClient.createHighlight` directly rather than
+pushing into the engine - a replayed request on sign-in still doesn't
+get retry/backoff if it fails (same behavior as before this change,
+just not improved yet). `bible_explorer_page.dart` (this repo's example
+app, and the sibling `bible_with_me` app) also has its own
+near-duplicate apply/remove logic, untouched.
+
 ## Where to log future changes
 
 - **`packages/youversion_platform_core/CHANGELOG.md`**: what changed, per

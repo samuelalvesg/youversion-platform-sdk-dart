@@ -87,6 +87,15 @@ class _BibleReaderState extends State<BibleReader> {
   late final BibleReaderController _controller;
   late final ReaderSettingsStorage _settingsStorage;
   late final PendingHighlightQueue _pendingQueue;
+
+  // `null` when no `highlightsClient` was provided (read-only reader).
+  // Handles the signed-in write path (create/re-color/remove) with
+  // retry+backoff - see its doc comment. `PendingHighlightQueue` above
+  // still separately covers the signed-out, survives-a-restart case;
+  // the two aren't redundant. Constructed once here, same as
+  // `_controller`/`_pendingQueue` - not reactive to `widget.highlightsClient`
+  // changing later, matching this widget's existing conventions.
+  late final YouVersionHighlightsSyncEngine? _highlightsSyncEngine;
   BiblePassage? _passage;
   Object? _loadError;
   Duration? _retryAfterRemaining;
@@ -111,6 +120,10 @@ class _BibleReaderState extends State<BibleReader> {
     );
     _settingsStorage = ReaderSettingsStorage(widget.storage);
     _pendingQueue = PendingHighlightQueue(widget.storage);
+    final client = widget.highlightsClient;
+    _highlightsSyncEngine = client == null
+        ? null
+        : YouVersionHighlightsSyncEngine(client: client, accessToken: () => widget.userAccessToken);
     _controller.addListener(_onControllerChanged);
     _loadSettings();
     _loadChapter();
@@ -122,6 +135,13 @@ class _BibleReaderState extends State<BibleReader> {
     final token = widget.userAccessToken;
     if (token != null && oldWidget.userAccessToken == null && widget.highlightsClient != null) {
       _pendingQueue.replay(client: widget.highlightsClient!, userAccessToken: token);
+    }
+    // A sign-out (or the token going missing) drops any in-flight/backed-
+    // off retry from the old session instead of letting it resend under
+    // whatever session (or lack of one) comes next - see
+    // `YouVersionHighlightsSyncEngine.reset`'s doc comment.
+    if (token == null && oldWidget.userAccessToken != null) {
+      _highlightsSyncEngine?.reset();
     }
   }
 
@@ -291,34 +311,41 @@ class _BibleReaderState extends State<BibleReader> {
       widget.onSignInRequested?.call();
       return;
     }
-    final client = widget.highlightsClient;
-    if (client == null) return;
-    final highlight = await client.createHighlight(
-      userAccessToken: token,
+    // Routed through the sync engine, not a direct `client.createHighlight`
+    // call - a failure here (network blip, transient server error) now
+    // gets retried with backoff instead of being silently lost. Fire-and-
+    // forget, same as the engine's own API - `_controller`'s optimistic
+    // color above is the UI's source of truth either way, so there's
+    // nothing further to await here.
+    _highlightsSyncEngine?.setHighlight(
       bibleId: _controller.bible.id,
+      chapterId: _controller.chapterId,
       passageId: verseId,
       color: hex,
     );
-    _controller.putVerseHighlight(verseId, highlight.color);
   }
 
-  Future<void> _removeHighlight(String verseId) async {
+  void _removeHighlight(String verseId) {
     // Optimistic, same reasoning as _applyHighlight - unmark immediately
     // regardless of sign-in state.
     _controller.removeVerseHighlight(verseId);
     final token = widget.userAccessToken;
-    final client = widget.highlightsClient;
     // No offline queue for removal (unlike creation via PendingHighlightQueue)
     // - a signed-out removal only clears the local optimistic mark, nothing
     // to actually delete server-side yet since nothing was ever sent.
-    if (token == null || client == null) return;
-    await client.deleteHighlight(userAccessToken: token, bibleId: _controller.bible.id, passageId: verseId);
+    if (token == null) return;
+    _highlightsSyncEngine?.removeHighlight(
+      bibleId: _controller.bible.id,
+      chapterId: _controller.chapterId,
+      passageId: verseId,
+    );
   }
 
   @override
   void dispose() {
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
+    _highlightsSyncEngine?.close();
     super.dispose();
   }
 

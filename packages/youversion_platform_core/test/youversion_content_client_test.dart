@@ -136,6 +136,121 @@ void main() {
       expect(book.title, 'Matthew');
     });
 
+    test('concurrent getBible calls for the same id share one HTTP request', () async {
+      var callCount = 0;
+      final mockClient = MockClient((request) async {
+        callCount++;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        return http.Response(
+          jsonEncode({
+            'data': {'id': 206, 'title': 'World English Bible'},
+          }),
+          200,
+        );
+      });
+
+      final content = YouVersionContentClient(
+        appKey: 'my-app-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      final results = await Future.wait([content.getBible(206), content.getBible(206)]);
+
+      expect(callCount, 1);
+      expect(results[0].title, 'World English Bible');
+      expect(results[1].title, 'World English Bible');
+    });
+
+    test('getBible called again after completion is served from cache, not a new request', () async {
+      var callCount = 0;
+      final mockClient = MockClient((request) async {
+        callCount++;
+        return http.Response(
+          jsonEncode({
+            'data': {'id': 206, 'title': 'World English Bible'},
+          }),
+          200,
+        );
+      });
+
+      final content = YouVersionContentClient(
+        appKey: 'my-app-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      await content.getBible(206);
+      await content.getBible(206);
+
+      expect(callCount, 1);
+    });
+
+    test('listBooks with different bible ids does not share a cache entry', () async {
+      var callCount = 0;
+      final mockClient = MockClient((request) async {
+        callCount++;
+        return http.Response(jsonEncode({'data': <dynamic>[]}), 200);
+      });
+
+      final content = YouVersionContentClient(
+        appKey: 'my-app-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      await content.listBooks(111);
+      await content.listBooks(206);
+
+      expect(callCount, 2);
+    });
+
+    test('a failed request is not cached - a later retry fires a real request again', () async {
+      var callCount = 0;
+      final mockClient = MockClient((request) async {
+        callCount++;
+        if (callCount == 1) return http.Response('server error', 500);
+        return http.Response(
+          jsonEncode({
+            'data': {'id': 206, 'title': 'World English Bible'},
+          }),
+          200,
+        );
+      });
+
+      final content = YouVersionContentClient(
+        appKey: 'my-app-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      await expectLater(content.getBible(206), throwsA(isA<YouVersionException>()));
+      final bible = await content.getBible(206);
+
+      expect(callCount, 2);
+      expect(bible.title, 'World English Bible');
+    });
+
+    test('close() clears the cache - a later call fires a new request', () async {
+      var callCount = 0;
+      final mockClient = MockClient((request) async {
+        callCount++;
+        return http.Response(
+          jsonEncode({
+            'data': {'id': 206, 'title': 'World English Bible'},
+          }),
+          200,
+        );
+      });
+
+      final content = YouVersionContentClient(
+        appKey: 'my-app-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      await content.getBible(206);
+      content.close();
+      await content.getBible(206);
+
+      expect(callCount, 2);
+    });
+
     test('HTTP 401 (missing/invalid App Key) throws YouVersionException with missingAuthentication', () async {
       final mockClient = MockClient((request) async {
         return http.Response('unauthorized', 401);

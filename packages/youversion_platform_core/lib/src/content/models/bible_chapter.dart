@@ -11,9 +11,7 @@ class BibleChapter {
       id: json['id'] as String,
       passageId: json['passage_id'] as String?,
       title: json['title'] as String?,
-      verses: (json['verses'] as List<dynamic>?)
-          ?.map((v) => BibleVerse.fromJson(v as Map<String, dynamic>))
-          .toList(),
+      verses: (json['verses'] as List<dynamic>?)?.map((v) => BibleVerse.fromJson(v as Map<String, dynamic>)).toList(),
     );
   }
 

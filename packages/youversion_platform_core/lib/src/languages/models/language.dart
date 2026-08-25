@@ -24,8 +24,8 @@ class Language {
       script: json['script'] as String?,
       scriptName: json['script_name'] as String?,
       aliases: (json['aliases'] as List<dynamic>?)?.cast<String>(),
-      displayNames: (json['display_names'] as Map<String, dynamic>?)
-          ?.map((key, value) => MapEntry(key, value as String)),
+      displayNames:
+          (json['display_names'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as String)),
       scripts: (json['scripts'] as List<dynamic>?)?.cast<String>(),
       variants: (json['variants'] as List<dynamic>?)?.cast<String>(),
       countries: (json['countries'] as List<dynamic>?)?.cast<String>(),

@@ -12,9 +12,7 @@ class BibleVersionIndex {
   factory BibleVersionIndex.fromJson(Map<String, dynamic> json) {
     return BibleVersionIndex(
       textDirection: json['text_direction'] as String?,
-      books: (json['books'] as List<dynamic>?)
-          ?.map((b) => BibleBook.fromJson(b as Map<String, dynamic>))
-          .toList(),
+      books: (json['books'] as List<dynamic>?)?.map((b) => BibleBook.fromJson(b as Map<String, dynamic>)).toList(),
     );
   }
 

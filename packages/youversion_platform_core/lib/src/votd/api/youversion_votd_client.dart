@@ -22,17 +22,14 @@ class YouVersionVotdClient {
   final Uri _baseUri;
   final YouVersionHttpClient _http;
 
-  Map<String, String> get _headers =>
-      youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
+  Map<String, String> get _headers => youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
 
   /// Lists all verses of the day for the year.
   Future<List<VerseOfTheDay>> listAll() async {
     final uri = _baseUri.replace(path: '/v1/verse_of_the_days');
     final json = await _http.getJson(uri, headers: _headers);
     final items = json['data'] as List<dynamic>? ?? const [];
-    return items
-        .map((item) => VerseOfTheDay.fromJson(item as Map<String, dynamic>))
-        .toList();
+    return items.map((item) => VerseOfTheDay.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   /// Fetches the verse for a specific day of the year (1-366). The response

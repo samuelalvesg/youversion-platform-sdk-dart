@@ -32,6 +32,34 @@ class YouVersionContentClient {
   final Uri _baseUri;
   final YouVersionHttpClient _http;
 
+  // In-memory only - dedups concurrent identical requests (two callers
+  // asking for the same bible/book/chapter/verse/passage/listing at once
+  // share one HTTP request) and caches completed results for this
+  // client instance's lifetime, cleared on `close()`. Matches the
+  // pattern in platform-sdk-kotlin's `BibleVersionRepository`/
+  // `BibleChapterRepository` (`Map<key, Deferred<T>>` + `Mutex`) - Dart's
+  // single-threaded event loop makes a plain `Map` race-free here as
+  // long as the `Future` is stored before the first `await`, so no
+  // Mutex/lock dependency is needed. This is NOT the "offline content
+  // cache" this package deliberately doesn't implement (see
+  // `docs/DECISIONS.md`'s "storage-agnostic" principle) - nothing here
+  // touches disk or survives past this instance's `close()`.
+  final Map<String, Object?> _cache = {};
+  final Map<String, Future<Object?>> _inFlight = {};
+
+  Future<T> _dedupedCached<T>(String key, Future<T> Function() fetch) {
+    if (_cache.containsKey(key)) return Future.value(_cache[key] as T);
+    final inFlight = _inFlight[key];
+    if (inFlight != null) return inFlight.then((value) => value as T);
+
+    final future = fetch();
+    _inFlight[key] = future;
+    return future.then((value) {
+      _cache[key] = value;
+      return value;
+    }).whenComplete(() => _inFlight.remove(key));
+  }
+
   Map<String, String> get _headers => youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
 
   /// `401` = missing/invalid `X-YVP-App-Key` - confirmed live (an empty or
@@ -53,34 +81,41 @@ class YouVersionContentClient {
     List<String>? fields,
     int? pageSize,
     String? pageToken,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/bibles',
-      queryParameters: {
-        'language_ranges[]': languageRanges.isEmpty ? '*' : languageRanges.join(','),
-        if (fields != null) 'fields[]': fields,
-        if (pageSize != null) 'page_size': '$pageSize',
-        if (pageToken != null) 'page_token': pageToken,
-      },
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return YouVersionCollection.fromJson(json, Bible.fromJson);
+  }) {
+    final key = 'listBibles:${languageRanges.join(',')}:${fields?.join(',')}:$pageSize:$pageToken';
+    return _dedupedCached(key, () async {
+      final uri = _baseUri.replace(
+        path: '/v1/bibles',
+        queryParameters: {
+          'language_ranges[]': languageRanges.isEmpty ? '*' : languageRanges.join(','),
+          if (fields != null) 'fields[]': fields,
+          if (pageSize != null) 'page_size': '$pageSize',
+          if (pageToken != null) 'page_token': pageToken,
+        },
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return YouVersionCollection.fromJson(json, Bible.fromJson);
+    });
   }
 
   /// Fetches a Bible by id (basic metadata, no book list - use
   /// [getIndex] for that).
-  Future<Bible> getBible(int bibleId) async {
-    final uri = _baseUri.replace(path: '/v1/bibles/$bibleId');
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return Bible.fromJson(_unwrap(json));
+  Future<Bible> getBible(int bibleId) {
+    return _dedupedCached('bible:$bibleId', () async {
+      final uri = _baseUri.replace(path: '/v1/bibles/$bibleId');
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return Bible.fromJson(_unwrap(json));
+    });
   }
 
   /// Full book → chapter → verse tree for a Bible, in a single call
   /// (`GET /v1/bibles/{id}/index`), including `textDirection` (RTL/LTR).
-  Future<BibleVersionIndex> getIndex(int bibleId) async {
-    final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/index');
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return BibleVersionIndex.fromJson(_unwrap(json));
+  Future<BibleVersionIndex> getIndex(int bibleId) {
+    return _dedupedCached('index:$bibleId', () async {
+      final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/index');
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return BibleVersionIndex.fromJson(_unwrap(json));
+    });
   }
 
   /// Fetches a passage of text by its USFM id (e.g. `MAT.1.1`, `JHN.3.16-JHN.3.17`).
@@ -98,45 +133,54 @@ class YouVersionContentClient {
     String format = 'html',
     bool includeHeadings = true,
     bool includeNotes = true,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/bibles/$bibleId/passages/$passageId',
-      queryParameters: {
-        'format': format,
-        'include_headings': '$includeHeadings',
-        'include_notes': '$includeNotes',
-      },
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return BiblePassage.fromJson(_unwrap(json));
+  }) {
+    final key = 'passage:$bibleId:$passageId:$format:$includeHeadings:$includeNotes';
+    return _dedupedCached(key, () async {
+      final uri = _baseUri.replace(
+        path: '/v1/bibles/$bibleId/passages/$passageId',
+        queryParameters: {
+          'format': format,
+          'include_headings': '$includeHeadings',
+          'include_notes': '$includeNotes',
+        },
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return BiblePassage.fromJson(_unwrap(json));
+    });
   }
 
   /// Lists the books of a Bible.
-  Future<List<BibleBook>> listBooks(int bibleId) async {
-    final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/books');
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    final items = json['data'] as List<dynamic>? ?? const [];
-    return items.map((item) => BibleBook.fromJson(item as Map<String, dynamic>)).toList();
+  Future<List<BibleBook>> listBooks(int bibleId) {
+    return _dedupedCached('books:$bibleId', () async {
+      final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/books');
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      final items = json['data'] as List<dynamic>? ?? const [];
+      return items.map((item) => BibleBook.fromJson(item as Map<String, dynamic>)).toList();
+    });
   }
 
   /// Fetches a single book (USFM, e.g. `MAT`).
-  Future<BibleBook> getBook({required int bibleId, required String bookUsfm}) async {
-    final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/books/$bookUsfm');
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return BibleBook.fromJson(_unwrap(json));
+  Future<BibleBook> getBook({required int bibleId, required String bookUsfm}) {
+    return _dedupedCached('book:$bibleId:$bookUsfm', () async {
+      final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/books/$bookUsfm');
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return BibleBook.fromJson(_unwrap(json));
+    });
   }
 
   /// Lists the chapters of a book (USFM, e.g. `MAT`).
   Future<List<BibleChapter>> listChapters({
     required int bibleId,
     required String bookUsfm,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters',
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    final items = json['data'] as List<dynamic>? ?? const [];
-    return items.map((item) => BibleChapter.fromJson(item as Map<String, dynamic>)).toList();
+  }) {
+    return _dedupedCached('chapters:$bibleId:$bookUsfm', () async {
+      final uri = _baseUri.replace(
+        path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters',
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      final items = json['data'] as List<dynamic>? ?? const [];
+      return items.map((item) => BibleChapter.fromJson(item as Map<String, dynamic>)).toList();
+    });
   }
 
   /// Fetches a single chapter (USFM, e.g. `MAT.1`).
@@ -144,12 +188,14 @@ class YouVersionContentClient {
     required int bibleId,
     required String bookUsfm,
     required String chapterId,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId',
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return BibleChapter.fromJson(_unwrap(json));
+  }) {
+    return _dedupedCached('chapter:$bibleId:$bookUsfm:$chapterId', () async {
+      final uri = _baseUri.replace(
+        path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId',
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return BibleChapter.fromJson(_unwrap(json));
+    });
   }
 
   /// Lists the verses of a chapter (USFM, e.g. `MAT.1`).
@@ -157,13 +203,15 @@ class YouVersionContentClient {
     required int bibleId,
     required String bookUsfm,
     required String chapterId,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses',
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    final items = json['data'] as List<dynamic>? ?? const [];
-    return items.map((item) => BibleVerse.fromJson(item as Map<String, dynamic>)).toList();
+  }) {
+    return _dedupedCached('verses:$bibleId:$bookUsfm:$chapterId', () async {
+      final uri = _baseUri.replace(
+        path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses',
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      final items = json['data'] as List<dynamic>? ?? const [];
+      return items.map((item) => BibleVerse.fromJson(item as Map<String, dynamic>)).toList();
+    });
   }
 
   /// Fetches a single verse (USFM, e.g. `MAT.1.1`).
@@ -172,12 +220,15 @@ class YouVersionContentClient {
     required String bookUsfm,
     required String chapterId,
     required String verseId,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses/$verseId',
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return BibleVerse.fromJson(_unwrap(json));
+  }) {
+    final key = 'verse:$bibleId:$bookUsfm:$chapterId:$verseId';
+    return _dedupedCached(key, () async {
+      final uri = _baseUri.replace(
+        path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses/$verseId',
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return BibleVerse.fromJson(_unwrap(json));
+    });
   }
 
   /// Single-item endpoints are wrapped as `{"data": {...}}`, same as
@@ -189,5 +240,9 @@ class YouVersionContentClient {
     return json;
   }
 
-  void close() => _http.close();
+  void close() {
+    _http.close();
+    _cache.clear();
+    _inFlight.clear();
+  }
 }

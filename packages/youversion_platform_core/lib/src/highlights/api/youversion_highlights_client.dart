@@ -61,9 +61,7 @@ class YouVersionHighlightsClient {
       reasonForStatus: _reasonForGet,
     );
     final items = json['data'] as List<dynamic>? ?? const [];
-    return items
-        .map((item) => Highlight.fromJson(item as Map<String, dynamic>))
-        .toList();
+    return items.map((item) => Highlight.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   /// Creates a highlight. [color] must be a 6-character hex (with or

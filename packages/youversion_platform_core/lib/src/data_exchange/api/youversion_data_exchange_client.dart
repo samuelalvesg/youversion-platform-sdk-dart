@@ -55,9 +55,8 @@ class YouVersionDataExchangeClient {
       uri,
       headers: {'Authorization': 'Bearer $userAccessToken'},
       body: {'requested_permissions': requestedPermissions.toList()..sort()},
-      reasonForStatus: (status) => status == 401
-          ? YouVersionErrorReason.notPermitted
-          : YouVersionErrorReason.cannotDownload,
+      reasonForStatus: (status) =>
+          status == 401 ? YouVersionErrorReason.notPermitted : YouVersionErrorReason.cannotDownload,
     );
     return json['token'] as String;
   }

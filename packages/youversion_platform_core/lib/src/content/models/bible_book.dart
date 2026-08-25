@@ -23,12 +23,9 @@ class BibleBook {
       fullTitle: json['full_title'] as String?,
       abbreviation: json['abbreviation'] as String?,
       canon: json['canon'] as String?,
-      chapters: (json['chapters'] as List<dynamic>?)
-          ?.map((c) => BibleChapter.fromJson(c as Map<String, dynamic>))
-          .toList(),
-      intro: json['intro'] == null
-          ? null
-          : BibleBookIntro.fromJson(json['intro'] as Map<String, dynamic>),
+      chapters:
+          (json['chapters'] as List<dynamic>?)?.map((c) => BibleChapter.fromJson(c as Map<String, dynamic>)).toList(),
+      intro: json['intro'] == null ? null : BibleBookIntro.fromJson(json['intro'] as Map<String, dynamic>),
     );
   }
 
@@ -44,6 +41,5 @@ class BibleBook {
   final List<BibleChapter>? chapters;
   final BibleBookIntro? intro;
 
-  bool get isCanonical =>
-      canon == 'old_testament' || canon == 'new_testament';
+  bool get isCanonical => canon == 'old_testament' || canon == 'new_testament';
 }

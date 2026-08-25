@@ -23,6 +23,26 @@ class YouVersionLanguagesClient {
   final Uri _baseUri;
   final YouVersionHttpClient _http;
 
+  // In-memory only, cleared on `close()` - same dedup+cache pattern and
+  // rationale as `YouVersionContentClient`'s (see its doc comment on
+  // these same 2 fields for why this doesn't touch the "storage-agnostic"
+  // decision in `docs/DECISIONS.md`).
+  final Map<String, Object?> _cache = {};
+  final Map<String, Future<Object?>> _inFlight = {};
+
+  Future<T> _dedupedCached<T>(String key, Future<T> Function() fetch) {
+    if (_cache.containsKey(key)) return Future.value(_cache[key] as T);
+    final inFlight = _inFlight[key];
+    if (inFlight != null) return inFlight.then((value) => value as T);
+
+    final future = fetch();
+    _inFlight[key] = future;
+    return future.then((value) {
+      _cache[key] = value;
+      return value;
+    }).whenComplete(() => _inFlight.remove(key));
+  }
+
   Map<String, String> get _headers => youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
 
   /// `401` = missing/invalid `X-YVP-App-Key` - confirmed live, same as
@@ -38,27 +58,36 @@ class YouVersionLanguagesClient {
     List<String>? fields,
     int? pageSize,
     String? pageToken,
-  }) async {
-    final uri = _baseUri.replace(
-      path: '/v1/languages',
-      queryParameters: {
-        if (country != null) 'country': country,
-        if (fields != null) 'fields[]': fields,
-        if (pageSize != null) 'page_size': '$pageSize',
-        if (pageToken != null) 'page_token': pageToken,
-      },
-    );
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    return YouVersionCollection.fromJson(json, Language.fromJson);
+  }) {
+    final key = 'listLanguages:$country:${fields?.join(',')}:$pageSize:$pageToken';
+    return _dedupedCached(key, () async {
+      final uri = _baseUri.replace(
+        path: '/v1/languages',
+        queryParameters: {
+          if (country != null) 'country': country,
+          if (fields != null) 'fields[]': fields,
+          if (pageSize != null) 'page_size': '$pageSize',
+          if (pageToken != null) 'page_token': pageToken,
+        },
+      );
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      return YouVersionCollection.fromJson(json, Language.fromJson);
+    });
   }
 
   /// Fetches a language by id.
-  Future<Language> getLanguage(String languageId) async {
-    final uri = _baseUri.replace(path: '/v1/languages/$languageId');
-    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
-    final data = json['data'];
-    return Language.fromJson(data is Map<String, dynamic> ? data : json);
+  Future<Language> getLanguage(String languageId) {
+    return _dedupedCached('language:$languageId', () async {
+      final uri = _baseUri.replace(path: '/v1/languages/$languageId');
+      final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
+      final data = json['data'];
+      return Language.fromJson(data is Map<String, dynamic> ? data : json);
+    });
   }
 
-  void close() => _http.close();
+  void close() {
+    _http.close();
+    _cache.clear();
+    _inFlight.clear();
+  }
 }

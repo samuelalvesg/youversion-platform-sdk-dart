@@ -20,6 +20,7 @@ export 'src/content/models/collection.dart';
 export 'src/data_exchange/api/youversion_data_exchange_client.dart';
 export 'src/data_exchange/models/data_exchange_result.dart';
 export 'src/highlights/api/youversion_highlights_client.dart';
+export 'src/highlights/domain/youversion_highlights_sync_engine.dart';
 export 'src/highlights/models/highlight.dart';
 export 'src/http/youversion_exception.dart';
 export 'src/http/youversion_http_client.dart';

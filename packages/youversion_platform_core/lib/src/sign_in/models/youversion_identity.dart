@@ -28,8 +28,7 @@ class YouVersionIdentity {
       yvpId: claims['yvp_id'] as String? ?? claims['sub'] as String,
       email: claims['email'] as String?,
       name: claims['name'] as String?,
-      profilePicture:
-          claims['picture'] as String? ?? claims['profile_picture'] as String?,
+      profilePicture: claims['picture'] as String? ?? claims['profile_picture'] as String?,
     );
   }
 

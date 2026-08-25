@@ -1,5 +1,36 @@
 ## Unreleased
 
+- Added `YouVersionHighlightsSyncEngine` - an in-memory, offline-aware
+  sync layer on top of `YouVersionHighlightsClient`: optimistic local
+  writes, a retry queue with exponential backoff (`1s, 2s, 4s, 8s, 16s,
+  30s`, capped), account-wide permission-refusal (`403`) handling that
+  drops the affected queue instead of wedging it (and triggers a reload
+  of the affected chapters), per-chapter load throttling (5 minutes,
+  configurable) + in-flight-load deduplication, and a `reset()` for
+  session-scoped invalidation (call on sign-out/account-switch - no
+  in-flight retry/load from before that call is applied afterward).
+  Ported from platform-sdk-kotlin's `BibleHighlightsRepository`/
+  `BibleHighlightCache`, adapted to pure Dart (no `Mutex`/`StateFlow` -
+  see the class doc comment and `docs/DECISIONS.md`). In-memory only,
+  cleared on `close()` - complements, doesn't replace,
+  `youversion_platform_reader`'s `PendingHighlightQueue` (which persists
+  across app restarts while signed out - a different concern this engine
+  doesn't attempt).
+
+- `YouVersionContentClient`/`YouVersionLanguagesClient`: added in-flight
+  request deduplication + an in-memory (not persistent) result cache -
+  two concurrent identical calls (e.g. `getBible(206)` from two widgets
+  at once) now share one HTTP request instead of firing two, and a
+  completed result is served from memory on a later call with the same
+  parameters. Applies to `getBible`/`getIndex`/`getPassage`/`getBook`/
+  `getChapter`/`getVerse`/`listBibles`/`listBooks`/`listChapters`/
+  `listVerses` on `YouVersionContentClient`, and `getLanguage`/
+  `listLanguages` on `YouVersionLanguagesClient`. Cleared on `close()`,
+  never touches disk - not the "offline content cache" this package
+  deliberately doesn't implement (host app's job, see
+  `docs/DECISIONS.md`). Matches the pattern in platform-sdk-kotlin's
+  `BibleVersionRepository`/`BibleChapterRepository`.
+
 - Added `OAuthLoopbackServer` - a temporary local HTTP server for the
   RFC 8252 §7.3 loopback-interface desktop sign-in flow (open the system
   browser, catch the redirect on `http://127.0.0.1:<port>`, no

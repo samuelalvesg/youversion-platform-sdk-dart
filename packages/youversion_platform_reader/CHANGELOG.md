@@ -1,5 +1,16 @@
 ## Unreleased
 
+- `BibleReader`'s signed-in highlight writes (`_applyHighlight`/
+  `_removeHighlight`) now go through `_core`'s new
+  `YouVersionHighlightsSyncEngine` instead of calling
+  `YouVersionHighlightsClient` directly - a failed create/re-color/
+  remove now retries with backoff instead of being silently lost. Also
+  calls the engine's `reset()` on sign-out, so a retry that was still
+  backing off under the old session gets dropped instead of resent
+  under a new/no session. `PendingHighlightQueue` (signed-out, persisted
+  across restarts) is unchanged - the two are complementary, see
+  `docs/DECISIONS.md`.
+
 - **Fixed a real bug**: `BibleReader` wired `BibleTextView.footer` to
   `Bible.readerFooter` (JSON field `info`), which is `null` for every
   real bible checked live (WEBUS, KJV, NIV) - no copyright/publisher
