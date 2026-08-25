@@ -1,0 +1,7 @@
+arb-dir: lib/l10n
+template-arb-file: youversion_reader_en.arb
+output-localization-file: youversion_reader_localizations.dart
+output-class: YouVersionReaderLocalizations
+output-dir: lib/src/l10n
+synthetic-package: false
+nullable-getter: false

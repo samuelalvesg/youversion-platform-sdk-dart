@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/youversion_ui_strings.dart';
+
 /// Visual density of [YouVersionSignInButton].
 enum YouVersionSignInButtonMode { full, compact, iconOnly }
 
@@ -65,7 +67,10 @@ class YouVersionSignInButton extends StatelessWidget {
       return OutlinedButton(onPressed: isLoading ? null : onPressed, style: style, child: icon);
     }
 
-    final label = mode == YouVersionSignInButtonMode.compact ? 'YouVersion' : 'Sign in with YouVersion';
+    const brandName = 'YouVersion';
+    final label = mode == YouVersionSignInButtonMode.compact
+        ? brandName
+        : youVersionUiStringsOf(context).signInWithYouVersionLabel(brandName);
 
     return OutlinedButton.icon(
       onPressed: isLoading ? null : onPressed,

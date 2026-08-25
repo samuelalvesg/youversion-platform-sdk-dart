@@ -1,0 +1,29 @@
+{
+  "@@locale": "vi",
+  "searchBooksHint": "Tìm kiếm",
+  "previousChapterTooltip": "Chương trước",
+  "nextChapterTooltip": "Chương tiếp theo",
+  "decreaseFontSizeTooltip": "Giảm cỡ chữ",
+  "increaseFontSizeTooltip": "Tăng cỡ chữ",
+  "changeVersionTooltip": "Thay đổi phiên bản Kinh Thánh",
+  "rateLimitedError": "Too many requests - please wait a bit before trying again.",
+  "@rateLimitedError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.rateLimited (HTTP 429)."
+  },
+  "signInRequiredError": "Sign in required (or your session expired).",
+  "@signInRequiredError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.missingAuthentication."
+  },
+  "notPermittedError": "Not permitted for this account.",
+  "@notPermittedError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.notPermitted."
+  },
+  "invalidResponseError": "Unexpected response from the server.",
+  "@invalidResponseError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.invalidResponse."
+  },
+  "loadFailedError": "Could not load this chapter.",
+  "@loadFailedError": {
+    "description": "Generic fallback shown when a chapter load fails for any other reason."
+  }
+}

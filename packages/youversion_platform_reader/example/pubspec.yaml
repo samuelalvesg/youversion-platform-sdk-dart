@@ -1,0 +1,33 @@
+name: youversion_platform_reader_example
+description: Example app for youversion_platform_reader.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ^3.4.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  youversion_platform_core:
+    path: ../../youversion_platform_core
+  youversion_platform_reader:
+    path: ../
+  youversion_platform_ui:
+    path: ../../youversion_platform_ui
+  shared_preferences: ^2.3.0
+  url_launcher: ^6.3.0
+  share_plus: ^10.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true

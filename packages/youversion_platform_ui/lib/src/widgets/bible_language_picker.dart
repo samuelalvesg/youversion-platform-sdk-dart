@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:youversion_platform_core/youversion_platform_core.dart';
 
+import '../l10n/youversion_ui_strings.dart';
+
 /// Searchable list of [Language]s, matching the display-name locale of the
 /// caller's choice (`Language.displayNames` is keyed by locale tag).
 ///
@@ -41,6 +43,7 @@ class _BibleLanguagePickerState extends State<BibleLanguagePicker> {
     final filtered = query.isEmpty
         ? widget.languages
         : widget.languages.where((language) => _labelFor(language).toLowerCase().contains(query)).toList();
+    final strings = youVersionUiStringsOf(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,10 +52,10 @@ class _BibleLanguagePickerState extends State<BibleLanguagePicker> {
         Padding(
           padding: const EdgeInsets.all(12),
           child: TextField(
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Search languages',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: strings.searchLanguagesHint,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (value) => setState(() => _query = value),
           ),

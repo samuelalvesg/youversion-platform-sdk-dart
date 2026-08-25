@@ -1,0 +1,23 @@
+{
+  "@@locale": "ar",
+  "verseOfTheDayLabel": "آية اليوم",
+  "searchLanguagesHint": "البحث في اللغات",
+  "closeButton": "إغلاق",
+  "clearHighlightTooltip": "مسح التمييز",
+  "copyButton": "نسخ",
+  "shareButton": "شارك",
+  "signOutUnsyncedMessage": "لم يتم حفظ بعض التمييزات الخاصه بك بعد، وستُفقد إذا قمت بتسجيل الخروج. هل تريد تسجيل الخروج على أي حال؟",
+  "cancelButton": "إلغاء",
+  "signOutButton": "تسجيل الخروج",
+  "signInWithYouVersionLabel": "تسجيل الدخول باستخدام {brandName}",
+  "highlightColorsLabel": "ألوان التمييز",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

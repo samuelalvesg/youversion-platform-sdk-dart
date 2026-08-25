@@ -1,0 +1,23 @@
+{
+  "@@locale": "tr",
+  "verseOfTheDayLabel": "Günün Ayeti",
+  "searchLanguagesHint": "Dilleri ara",
+  "closeButton": "Kapat",
+  "clearHighlightTooltip": "Vurgulamayı temizle",
+  "copyButton": "Kopyala",
+  "shareButton": "Paylaş",
+  "signOutUnsyncedMessage": "Bazı vurgulamalarınız henüz kaydedilmedi ve oturumu kapatırsanız kaybolacaklardır. Yine de oturumu kapatmak istiyor musunuz?",
+  "cancelButton": "İptal",
+  "signOutButton": "Çıkış yap",
+  "signInWithYouVersionLabel": "{brandName} ile giriş yap",
+  "highlightColorsLabel": "Vurgulama renkleri",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

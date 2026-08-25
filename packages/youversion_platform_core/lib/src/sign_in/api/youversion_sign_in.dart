@@ -20,11 +20,13 @@ import '../pkce.dart';
 /// app's responsibility (Flutter: `url_launcher` + capturing the redirect
 /// via deep link/route).
 ///
-/// Assumes a real HTTPS `redirectUri` controlled by the app itself, where
-/// the `code` arrives directly as a query param (standard Authorization
-/// Code flow). The native SDKs (Android/iOS) make an extra hop via
-/// `/auth/callback` to work around Universal/App Link limitations on those
-/// OSes - not needed here.
+/// Assumes a real HTTPS `redirectUri` controlled by the app itself.
+/// **Not always a direct-`code`-in-the-query redirect** - confirmed live
+/// that at least some App Key configurations redirect with only `state`/
+/// `granted_permissions` first, requiring the same extra `/auth/callback`
+/// hop the native SDKs (Android/iOS) always perform - see
+/// [YouVersionSignIn.resolveCallback]. Call it whenever `exchangeCode`'s
+/// `code` isn't present in the redirect yet.
 class YouVersionSignIn {
   YouVersionSignIn({
     required this.appKey,
@@ -74,16 +76,11 @@ class YouVersionSignIn {
       YouVersionPermission.profile,
       YouVersionPermission.email,
     };
-    final requiredScope = ({YouVersionPermission.openid, ...permissions}
-          ..retainWhere(required.contains))
+    final requiredScope = ({YouVersionPermission.openid, ...permissions}..retainWhere(required.contains))
         .map((p) => p.rawValue)
         .toList()
       ..sort();
-    final requestedOptional = permissions
-        .where((p) => !required.contains(p))
-        .map((p) => p.rawValue)
-        .toList()
-      ..sort();
+    final requestedOptional = permissions.where((p) => !required.contains(p)).map((p) => p.rawValue).toList()..sort();
 
     final uri = _baseUri.replace(
       path: '/auth/authorize',
@@ -96,8 +93,7 @@ class YouVersionSignIn {
         'nonce': nonce,
         'code_challenge': pkce.codeChallenge,
         'code_challenge_method': 'S256',
-        if (requestedOptional.isNotEmpty)
-          'requested_permissions': requestedOptional.join(','),
+        if (requestedOptional.isNotEmpty) 'requested_permissions': requestedOptional.join(','),
         'require_user_interaction': 'true',
         if (installationId != null) 'x-yvp-installation-id': installationId!,
       },
@@ -109,6 +105,30 @@ class YouVersionSignIn {
       state: state,
       nonce: nonce,
     );
+  }
+
+  /// Resolves the intermediate `/auth/callback` hop - **required** for at
+  /// least some App Key configurations. The initial `/auth/authorize`
+  /// redirect can land on [redirectUri] with only `state`/
+  /// `granted_permissions` and **no `code`** - confirmed live (curling
+  /// `https://api.youversion.com/auth/callback?state=...&granted_permissions=...`
+  /// with redirects disabled returns a `302` whose `Location` header
+  /// finally carries `code`), and matches Kotlin's `UsersEndpoints.kt`
+  /// (`obtainLocation`/`obtainCode`), which always performs this exact
+  /// hop - this package's own doc comment previously assumed it was never
+  /// needed ("the code arrives directly as a query param"), which turned
+  /// out to be wrong for the App Key this was tested against.
+  ///
+  /// Call this first when [exchangeCode]'s `code` isn't in the redirect
+  /// URL yet; parse the *returned* URI's `code` (and `state`) instead.
+  ///
+  /// **Not usable on Flutter Web** - see
+  /// [YouVersionHttpClient.getRedirectLocation]'s doc comment; browsers
+  /// don't expose a cross-origin manual redirect's `Location` header to
+  /// JS at all, a platform restriction this package can't route around.
+  Future<Uri> resolveCallback(Uri redirectUri) {
+    final uri = _baseUri.replace(path: '/auth/callback', queryParameters: redirectUri.queryParameters);
+    return _http.getRedirectLocation(uri);
   }
 
   /// Reads `granted_permissions` from the callback URL - only covers the
@@ -207,8 +227,7 @@ class YouVersionSignIn {
     return YouVersionIdentity.fromClaims(_decodeClaims(idToken));
   }
 
-  Map<String, String> get _headers =>
-      youVersionSdkHeaders(appKey: appKey, installationId: installationId);
+  Map<String, String> get _headers => youVersionSdkHeaders(appKey: appKey, installationId: installationId);
 
   Map<String, dynamic> _decodeClaims(String jwt) {
     final parts = jwt.split('.');

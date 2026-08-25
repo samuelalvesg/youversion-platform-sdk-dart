@@ -31,14 +31,24 @@ class BibleReaderController extends ChangeNotifier {
   BibleVersionIndex _index;
   String _chapterId;
   ReaderFontSettings _fontSettings;
-  Highlight? _selectedHighlight;
+  String? _selectedVerseId;
+  Map<String, String> _verseHighlights = const {};
   bool _isLoading = false;
 
   Bible get bible => _bible;
   BibleVersionIndex get index => _index;
   String get chapterId => _chapterId;
   ReaderFontSettings get fontSettings => _fontSettings;
-  Highlight? get selectedHighlight => _selectedHighlight;
+
+  /// Full USFM id (e.g. `"JHN.3.16"`) of the verse currently tapped, or
+  /// `null` when none is selected.
+  String? get selectedVerseId => _selectedVerseId;
+
+  /// Saved highlight color (hex) per full USFM verse id, for every
+  /// highlight loaded for [chapterId] - populated by [setVerseHighlights],
+  /// called by `BibleReader` after `YouVersionHighlightsClient.listHighlights`.
+  Map<String, String> get verseHighlights => _verseHighlights;
+
   bool get isLoading => _isLoading;
 
   bool get hasPreviousChapter => ChapterNavigation.previous(_index, _chapterId) != null;
@@ -46,7 +56,8 @@ class BibleReaderController extends ChangeNotifier {
 
   Future<void> goToChapter(String chapterId) async {
     _chapterId = chapterId;
-    _selectedHighlight = null;
+    _selectedVerseId = null;
+    _verseHighlights = const {};
     notifyListeners();
   }
 
@@ -64,12 +75,40 @@ class BibleReaderController extends ChangeNotifier {
     _bible = bible;
     _index = index;
     _chapterId = chapterId;
-    _selectedHighlight = null;
+    _selectedVerseId = null;
+    _verseHighlights = const {};
     notifyListeners();
   }
 
-  void selectHighlight(Highlight? highlight) {
-    _selectedHighlight = highlight;
+  /// Toggles [verseId] as the selected verse - tapping the already-selected
+  /// verse again deselects it.
+  void selectVerse(String verseId) {
+    _selectedVerseId = _selectedVerseId == verseId ? null : verseId;
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _selectedVerseId = null;
+    notifyListeners();
+  }
+
+  /// Replaces the full set of loaded highlights for [chapterId] (from
+  /// `YouVersionHighlightsClient.listHighlights`).
+  void setVerseHighlights(List<Highlight> highlights) {
+    _verseHighlights = {for (final highlight in highlights) highlight.passageId: highlight.color};
+    notifyListeners();
+  }
+
+  /// Records a single verse's highlight color locally (after creating/
+  /// updating it) without refetching the whole list.
+  void putVerseHighlight(String verseId, String color) {
+    _verseHighlights = {..._verseHighlights, verseId: color};
+    notifyListeners();
+  }
+
+  /// Removes a single verse's highlight locally (after deleting it).
+  void removeVerseHighlight(String verseId) {
+    _verseHighlights = {..._verseHighlights}..remove(verseId);
     notifyListeners();
   }
 

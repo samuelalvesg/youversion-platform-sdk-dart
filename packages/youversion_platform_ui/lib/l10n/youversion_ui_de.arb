@@ -1,0 +1,23 @@
+{
+  "@@locale": "de",
+  "verseOfTheDayLabel": "Vers des Tages",
+  "searchLanguagesHint": "Sprachen suchen",
+  "closeButton": "Schließen",
+  "clearHighlightTooltip": "Hervorhebung entfernen",
+  "copyButton": "Kopieren",
+  "shareButton": "Teilen",
+  "signOutUnsyncedMessage": "Einige deiner Markierungen wurden noch nicht gespeichert und gehen verloren, wenn du dich abmeldest. Möchtest du dich trotzdem abmelden?",
+  "cancelButton": "Abbrechen",
+  "signOutButton": "Abmelden",
+  "signInWithYouVersionLabel": "Anmelden mit {brandName}",
+  "highlightColorsLabel": "Hervorhebungsfarben",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

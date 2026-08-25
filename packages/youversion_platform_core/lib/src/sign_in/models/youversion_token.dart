@@ -31,7 +31,16 @@ class YouVersionToken {
     return YouVersionToken(
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String,
-      expiresIn: json['expires_in'] as int,
+      // Confirmed live: the server sends `expires_in` as a string, not a
+      // JSON number, despite `RefreshTokenResponse`/`TokenResponse` typing
+      // it as an int in both Kotlin and this package's own doc comment
+      // assuming a plain int cast was safe. Parses either shape.
+      expiresIn: switch (json['expires_in']) {
+        final int value => value,
+        final String value => int.parse(value),
+        final num value => value.toInt(),
+        _ => throw FormatException('expires_in has an unexpected type: ${json['expires_in']}'),
+      },
       scope: json['scope'] as String? ?? '',
       idToken: json['id_token'] as String?,
       grantedPermissions: grantedPermissions,

@@ -1,0 +1,86 @@
+{
+  "@@locale": "en",
+  "appLanguageLabel": "App language",
+  "signInTile": "Sign In",
+  "signedInAs": "Signed in as {name}",
+  "@signedInAs": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notSignedIn": "Not signed in",
+  "readerTile": "Reader",
+  "readerSubtitle": "BibleReader - tap-to-select, highlights, themes, footnotes",
+  "bibleExplorerTile": "Bible Explorer",
+  "languagesTile": "Languages",
+  "organizationsTile": "Organizations",
+  "votdTile": "Verse of the Day",
+  "dataExchangeTile": "Data Exchange",
+  "signInFirst": "Sign in first",
+  "previewLabel": "Sample _ui string: \"{sample}\"",
+  "@previewLabel": {
+    "placeholders": { "sample": { "type": "String" } }
+  },
+  "signInPromptMessage": "This example wants to read your profile and, if you grant it, sync highlights.",
+  "invalidUrlError": "That doesn't look like a valid URL.",
+  "noCodeError": "Still no \"code\" query parameter after resolving /auth/callback.",
+  "signOutButton": "Sign out",
+  "redirectedUrlLabel": "Redirected URL",
+  "pasteCallbackInstructions": "A browser window opened. After you finish signing in, it redirects to a page this example doesn't control - paste the resulting URL from your browser's address bar below (the page itself may fail to load, that's expected; the \"code\" is in the URL either way).",
+  "completeSignInButton": "Complete sign-in",
+  "signInToSyncMessage": "Sign in from the \"Sign In\" section to sync highlights.",
+  "changeButton": "Change language/version",
+  "filterByCountryTitle": "Filter by country?",
+  "endOfListLabel": "End of list",
+  "loadMoreButton": "Load more",
+  "idLabel": "id: {id}",
+  "@idLabel": {
+    "placeholders": { "id": { "type": "String" } }
+  },
+  "scriptLabel": "script: {script}",
+  "@scriptLabel": {
+    "placeholders": { "script": { "type": "String" } }
+  },
+  "textDirectionLabel": "text direction: {direction}",
+  "@textDirectionLabel": {
+    "placeholders": { "direction": { "type": "String" } }
+  },
+  "defaultBibleVersionIdLabel": "default Bible version id: {id}",
+  "@defaultBibleVersionIdLabel": {
+    "placeholders": { "id": { "type": "String" } }
+  },
+  "noOrganizationsMessage": "No organizations returned (try filtering by a bible_id instead).",
+  "dayLabel": "Day {day}",
+  "@dayLabel": {
+    "placeholders": { "day": { "type": "int" } }
+  },
+  "dataExchangeIntro": "Grants this example the \"highlights\" permission via the Data Exchange consent flow.",
+  "startDataExchangeButton": "Start Data Exchange",
+  "pasteApprovalInstructions": "After approving in the browser, paste the resulting URL here:",
+  "statusLabel": "status: {status}",
+  "@statusLabel": {
+    "placeholders": { "status": { "type": "String" } }
+  },
+  "grantedPermissionsLabel": "granted permissions: {permissions}",
+  "@grantedPermissionsLabel": {
+    "placeholders": { "permissions": { "type": "String" } }
+  },
+  "rateLimitedMessage": "Too many requests - the API is rate-limiting this App Key for a bit.",
+  "signInRequiredMessage": "Sign in required (or your session expired).",
+  "notPermittedMessage": "Not permitted - this permission may not have been granted at sign-in.",
+  "invalidResponseMessage": "Unexpected response from the server.",
+  "requestFailedMessage": "Request failed ({statusCode}).",
+  "@requestFailedMessage": {
+    "placeholders": { "statusCode": { "type": "String" } }
+  },
+  "tryAgainInSecondsButton": "Try again in {seconds}s",
+  "@tryAgainInSecondsButton": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "tryAgainButton": "Try again",
+  "filterByCountryLabel": "Filter by country",
+  "clearTooltip": "Clear",
+  "copiedToClipboardMessage": "Copied to clipboard",
+  "fontSettingsTooltip": "Font settings",
+  "bookSectionLabel": "Book",
+  "chapterSectionLabel": "Chapter",
+  "verseSectionLabel": "Verse"
+}

@@ -3,7 +3,7 @@
 /// Contract validated against platform-sdk-kotlin, `highlights/models/Highlight.kt`.
 class Highlight {
   Highlight({
-    required this.id,
+    this.id,
     required this.bibleId,
     required this.passageId,
     required this.color,
@@ -14,7 +14,7 @@ class Highlight {
 
   factory Highlight.fromJson(Map<String, dynamic> json) {
     return Highlight(
-      id: json['id'] as String,
+      id: json['id'] as String?,
       bibleId: json['bible_id'] as int,
       passageId: json['passage_id'] as String,
       color: json['color'] as String,
@@ -24,7 +24,14 @@ class Highlight {
     );
   }
 
-  final String id;
+  // Nullable - confirmed against Kotlin's own model (`id: String? = null`)
+  // and live: a real `listHighlights`/`createHighlight` response can omit
+  // it. Previously required, which crashed `Highlight.fromJson` with an
+  // uncaught type-cast error whenever it was missing - the exact root
+  // cause of an "infinite loading" bug report (`BibleReader._loadChapter`
+  // has no error handling around `listHighlights`, so the exception left
+  // `isLoading` stuck `true` forever - see `docs/DECISIONS.md`).
+  final String? id;
   final int bibleId;
   final String passageId;
 

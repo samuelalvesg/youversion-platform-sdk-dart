@@ -58,5 +58,20 @@ void main() {
 
       expect(language.id, 'por');
     });
+
+    test('401 (missing/invalid App Key) maps to missingAuthentication', () async {
+      final mockClient = MockClient((request) async => http.Response('unauthorized', 401));
+      final languages = YouVersionLanguagesClient(
+        appKey: 'invalid-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      try {
+        await languages.listLanguages();
+        fail('expected a YouVersionException');
+      } on YouVersionException catch (e) {
+        expect(e.reason, YouVersionErrorReason.missingAuthentication);
+      }
+    });
   });
 }

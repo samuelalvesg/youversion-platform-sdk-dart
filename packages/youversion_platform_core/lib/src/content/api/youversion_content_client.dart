@@ -1,3 +1,4 @@
+import '../../http/youversion_exception.dart';
 import '../../http/youversion_http_client.dart';
 import '../../http/youversion_sdk_headers.dart';
 import '../models/bible.dart';
@@ -31,8 +32,15 @@ class YouVersionContentClient {
   final Uri _baseUri;
   final YouVersionHttpClient _http;
 
-  Map<String, String> get _headers =>
-      youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
+  Map<String, String> get _headers => youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
+
+  /// `401` = missing/invalid `X-YVP-App-Key` - confirmed live (an empty or
+  /// invalid key returns `401` with an Apigee gateway fault body, distinct
+  /// from the app's own `{"message": ...}` `404` shape). Everything else
+  /// stays the generic default - no `400`/`406` distinction was observed
+  /// live for this API, so none is invented here.
+  YouVersionErrorReason _reasonForGet(int status) =>
+      status == 401 ? YouVersionErrorReason.missingAuthentication : YouVersionErrorReason.cannotDownload;
 
   /// Lists Bibles available for the languages in [languageRanges]
   /// (BCP 47, e.g. `['pt', 'en']`). Empty = all languages (`*`).
@@ -49,14 +57,13 @@ class YouVersionContentClient {
     final uri = _baseUri.replace(
       path: '/v1/bibles',
       queryParameters: {
-        'language_ranges[]':
-            languageRanges.isEmpty ? '*' : languageRanges.join(','),
+        'language_ranges[]': languageRanges.isEmpty ? '*' : languageRanges.join(','),
         if (fields != null) 'fields[]': fields,
         if (pageSize != null) 'page_size': '$pageSize',
         if (pageToken != null) 'page_token': pageToken,
       },
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return YouVersionCollection.fromJson(json, Bible.fromJson);
   }
 
@@ -64,7 +71,7 @@ class YouVersionContentClient {
   /// [getIndex] for that).
   Future<Bible> getBible(int bibleId) async {
     final uri = _baseUri.replace(path: '/v1/bibles/$bibleId');
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return Bible.fromJson(_unwrap(json));
   }
 
@@ -72,11 +79,19 @@ class YouVersionContentClient {
   /// (`GET /v1/bibles/{id}/index`), including `textDirection` (RTL/LTR).
   Future<BibleVersionIndex> getIndex(int bibleId) async {
     final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/index');
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return BibleVersionIndex.fromJson(_unwrap(json));
   }
 
   /// Fetches a passage of text by its USFM id (e.g. `MAT.1.1`, `JHN.3.16-JHN.3.17`).
+  ///
+  /// [format] is `'html'` or `'text'` (the only two the API documents/
+  /// supports - confirmed live against `/v1/bibles/{id}/passages/{id}`;
+  /// `'json'` is not a real option despite appearing as a raw string in
+  /// Kotlin's own URL-building test, which never asserts the server
+  /// actually accepts it - it 404s). `'html'` is what
+  /// `youversion_platform_ui`'s `BibleTextView` parses (verse numbers,
+  /// words-of-Christ, footnotes); `'text'` drops all of that structure.
   Future<BiblePassage> getPassage({
     required int bibleId,
     required String passageId,
@@ -92,24 +107,22 @@ class YouVersionContentClient {
         'include_notes': '$includeNotes',
       },
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return BiblePassage.fromJson(_unwrap(json));
   }
 
   /// Lists the books of a Bible.
   Future<List<BibleBook>> listBooks(int bibleId) async {
     final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/books');
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     final items = json['data'] as List<dynamic>? ?? const [];
-    return items
-        .map((item) => BibleBook.fromJson(item as Map<String, dynamic>))
-        .toList();
+    return items.map((item) => BibleBook.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   /// Fetches a single book (USFM, e.g. `MAT`).
   Future<BibleBook> getBook({required int bibleId, required String bookUsfm}) async {
     final uri = _baseUri.replace(path: '/v1/bibles/$bibleId/books/$bookUsfm');
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return BibleBook.fromJson(_unwrap(json));
   }
 
@@ -121,11 +134,9 @@ class YouVersionContentClient {
     final uri = _baseUri.replace(
       path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters',
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     final items = json['data'] as List<dynamic>? ?? const [];
-    return items
-        .map((item) => BibleChapter.fromJson(item as Map<String, dynamic>))
-        .toList();
+    return items.map((item) => BibleChapter.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   /// Fetches a single chapter (USFM, e.g. `MAT.1`).
@@ -137,7 +148,7 @@ class YouVersionContentClient {
     final uri = _baseUri.replace(
       path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId',
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return BibleChapter.fromJson(_unwrap(json));
   }
 
@@ -150,11 +161,9 @@ class YouVersionContentClient {
     final uri = _baseUri.replace(
       path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses',
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     final items = json['data'] as List<dynamic>? ?? const [];
-    return items
-        .map((item) => BibleVerse.fromJson(item as Map<String, dynamic>))
-        .toList();
+    return items.map((item) => BibleVerse.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   /// Fetches a single verse (USFM, e.g. `MAT.1.1`).
@@ -165,10 +174,9 @@ class YouVersionContentClient {
     required String verseId,
   }) async {
     final uri = _baseUri.replace(
-      path:
-          '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses/$verseId',
+      path: '/v1/bibles/$bibleId/books/$bookUsfm/chapters/$chapterId/verses/$verseId',
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return BibleVerse.fromJson(_unwrap(json));
   }
 

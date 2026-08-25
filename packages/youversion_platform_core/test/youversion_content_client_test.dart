@@ -136,7 +136,7 @@ void main() {
       expect(book.title, 'Matthew');
     });
 
-    test('HTTP error throws YouVersionException', () async {
+    test('HTTP 401 (missing/invalid App Key) throws YouVersionException with missingAuthentication', () async {
       final mockClient = MockClient((request) async {
         return http.Response('unauthorized', 401);
       });
@@ -146,10 +146,12 @@ void main() {
         httpClient: YouVersionHttpClient(client: mockClient),
       );
 
-      expect(
-        () => content.listBibles(languageRanges: ['en']),
-        throwsA(isA<YouVersionException>()),
-      );
+      try {
+        await content.listBibles(languageRanges: ['en']);
+        fail('expected a YouVersionException');
+      } on YouVersionException catch (e) {
+        expect(e.reason, YouVersionErrorReason.missingAuthentication);
+      }
     });
   });
 }

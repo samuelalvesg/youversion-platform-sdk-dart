@@ -1,0 +1,45 @@
+{
+  "@@locale": "en",
+  "verseOfTheDayLabel": "Verse of The Day",
+  "@verseOfTheDayLabel": {
+    "description": "Eyebrow label above a verse-of-the-day card. Rendered upper-case by the widget."
+  },
+  "searchLanguagesHint": "Search languages",
+  "searchTranslationsHint": "Search translations",
+  "signInFailedTitle": "Sign-in failed",
+  "signInFailedMessage": "Something went wrong while signing in with YouVersion.",
+  "closeButton": "Close",
+  "tryAgainButton": "Try again",
+  "clearHighlightTooltip": "Clear highlight",
+  "copyButton": "Copy",
+  "shareButton": "Share",
+  "signOutNoneMessage": "You can sign back in at any time.",
+  "signOutUnsyncedMessage": "Some of your highlights haven't been saved yet, and they will be lost if you sign out. Do you want to sign out anyway?",
+  "signOutTitle": "Sign out?",
+  "cancelButton": "Cancel",
+  "signOutButton": "Sign out",
+  "notNowButton": "Not now",
+  "signInWithYouVersionLabel": "Sign in with {brandName}",
+  "@signInWithYouVersionLabel": {
+    "placeholders": {
+      "brandName": {
+        "type": "String"
+      }
+    }
+  },
+  "highlightColorYellow": "Yellow highlight",
+  "highlightColorGreen": "Green highlight",
+  "highlightColorCyan": "Cyan highlight",
+  "highlightColorOrange": "Orange highlight",
+  "highlightColorPink": "Pink highlight",
+  "highlightColorsLabel": "Highlight colors",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

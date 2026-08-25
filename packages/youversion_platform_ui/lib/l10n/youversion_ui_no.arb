@@ -1,0 +1,23 @@
+{
+  "@@locale": "no",
+  "verseOfTheDayLabel": "Dagens vers",
+  "searchLanguagesHint": "Søk etter språk",
+  "closeButton": "Lukk",
+  "clearHighlightTooltip": "Fjern markering",
+  "copyButton": "Kopier",
+  "shareButton": "Del",
+  "signOutUnsyncedMessage": "Du har markeringer som ikke er lagret ennå. De vil gå tapt hvis du logger ut. Vil du logge ut likevel?",
+  "cancelButton": "Avbryt",
+  "signOutButton": "Logg ut",
+  "signInWithYouVersionLabel": "Logg inn med {brandName}",
+  "highlightColorsLabel": "Markeringsfarger",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

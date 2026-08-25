@@ -18,7 +18,7 @@ Repo: <https://github.com/samuelalvesg/youversion-platform-sdk-dart>
 
 ```yaml
 dependencies:
-  youversion_platform_ui: ^0.1.0
+  youversion_platform_ui: ^0.3.0
   youversion_platform_core: ^0.2.0
 ```
 
@@ -64,6 +64,26 @@ BibleVersionPicker(bibles: bibles.data, onSelected: (bible) { ... });
 BibleLanguagePicker(languages: languages.data, onSelected: (language) { ... });
 ```
 
+## Bible text rendering
+
+`BibleTextView` parses YouVersion's passage HTML ("YVDOM") - verse
+numbers, words-of-Christ (red-letter) styling, inline footnote markers,
+section headings - and supports tap-to-select-a-verse:
+
+```dart
+BibleTextView(
+  content: passage.content,
+  chapterId: 'JHN.3', // omit for a display-only passage with no verse identity
+  selectedVerseId: selectedVerseId,
+  highlightsByVerseId: highlightsByVerseId, // {'JHN.3.16': 'fffe00', ...}
+  isRightToLeft: bible.isRightToLeft,
+  onVerseTap: (verseId) => setState(() => selectedVerseId = verseId),
+)
+```
+
+`BibleCard`/`VerseOfTheDayCard` use this internally for their content, with
+no `chapterId` (display-only, no verse identity).
+
 ## Verse actions
 
 ```dart
@@ -80,6 +100,39 @@ showModalBottomSheet(
   ),
 );
 ```
+
+## Localization
+
+Every widget works out of the box in English, with no host setup required.
+To get localized strings (13 locales beyond English - `af`, `ar`, `cs`,
+`cy`, `de`, `es`, `fr`, `ko`, `no`, `pt`, `tr`, `vi`, `zh`), register the
+generated delegate in your `MaterialApp`:
+
+```dart
+MaterialApp(
+  localizationsDelegates: YouVersionUiLocalizations.localizationsDelegates,
+  supportedLocales: YouVersionUiLocalizations.supportedLocales,
+  // ...
+)
+```
+
+Combine `localizationsDelegates`/`supportedLocales` with your own app's
+lists (e.g. via `...`) if you have other localized packages too.
+
+RTL layout (Arabic) also depends on this: Flutter derives the ambient
+`Directionality` from `MaterialApp`'s resolved locale, which only happens
+once `supportedLocales` includes `ar`. Without registering the delegate,
+every widget renders left-to-right regardless of device locale.
+
+## Example
+
+A runnable example app is at [`example/`](example) - `cd example && flutter run`.
+No App Key needed (every widget shown uses hand-written sample data, not a
+real network response) - a static, network-free widget gallery.
+
+For a real, end-to-end demo (every `youversion_platform_core` endpoint,
+real sign-in, persistent storage), see
+[`youversion_platform_reader`'s example](../youversion_platform_reader/example).
 
 ## License
 

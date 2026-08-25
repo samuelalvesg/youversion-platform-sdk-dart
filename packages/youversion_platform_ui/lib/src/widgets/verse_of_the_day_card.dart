@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/youversion_ui_strings.dart';
 import '../theme/bible_text_theme.dart';
 import 'bible_card.dart';
 
@@ -26,12 +27,13 @@ class VerseOfTheDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = BibleTextTheme.of(context);
+    final strings = youVersionUiStringsOf(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('VERSE OF THE DAY', style: textTheme.label),
+        Text(strings.verseOfTheDayLabel.toUpperCase(), style: textTheme.label),
         const SizedBox(height: 8),
         BibleCard(reference: reference, content: content, onTap: onTap),
       ],

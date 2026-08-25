@@ -16,6 +16,14 @@ enum YouVersionErrorReason {
   /// Server refused to process the request (validation, generic `4xx`).
   cannotDownload,
 
+  /// `429 Too Many Requests` - confirmed against the official error-codes
+  /// docs (developers.youversion.com/error-codes), which document a
+  /// `Retry-After` header alongside it. Applied uniformly across every
+  /// client regardless of that client's own `reasonForStatus` (rate
+  /// limiting is a protocol-level condition, not endpoint-specific
+  /// semantics like `401`/`403` are).
+  rateLimited,
+
   /// Response came back, but in an unexpected format (not the documented
   /// JSON/envelope for the endpoint).
   invalidResponse,
@@ -31,12 +39,19 @@ class YouVersionException implements Exception {
     this.statusCode,
     this.body,
     this.reason = YouVersionErrorReason.unknown,
+    this.retryAfter,
   });
 
   final String message;
   final int? statusCode;
   final String? body;
   final YouVersionErrorReason reason;
+
+  /// Parsed from the `Retry-After` header on a `429` response (seconds
+  /// form only - confirmed live, the API sends an integer, not an HTTP
+  /// date). `null` when the header was absent or not `reason ==
+  /// rateLimited`.
+  final Duration? retryAfter;
 
   @override
   String toString() => 'YouVersionException($reason, $statusCode): $message';

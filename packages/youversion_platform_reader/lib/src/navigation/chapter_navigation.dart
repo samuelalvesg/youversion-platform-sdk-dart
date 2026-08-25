@@ -19,23 +19,23 @@ abstract final class ChapterNavigation {
     if (bookIndex == -1) return null;
 
     final book = books[bookIndex];
+    final introId = _introId(book);
+    if (introId != null && chapterId == introId) {
+      // Already at this book's intro - the previous entry point is the
+      // previous book (its last chapter, or its own intro).
+      return _previousBookEntryPoint(books, bookIndex);
+    }
+
     final chapters = book.chapters ?? const [];
-    final chapterIndex = chapters.indexWhere((c) => c.id == chapterId);
+    final chapterIndex = chapters.indexWhere((c) => _chapterId(c) == chapterId);
     if (chapterIndex == -1) return null;
 
-    if (chapterIndex > 0) return chapters[chapterIndex - 1].id;
+    if (chapterIndex > 0) return _chapterId(chapters[chapterIndex - 1]);
 
     // First chapter of the book: fall back to this book's intro, then to
     // the previous book's last chapter.
-    if (book.intro != null) return '$bookId.intro';
-
-    for (var i = bookIndex - 1; i >= 0; i--) {
-      final previousBook = books[i];
-      final previousChapters = previousBook.chapters ?? const [];
-      if (previousChapters.isNotEmpty) return previousChapters.last.id;
-      if (previousBook.intro != null) return '${previousBook.id}.intro';
-    }
-    return null;
+    if (introId != null) return introId;
+    return _previousBookEntryPoint(books, bookIndex);
   }
 
   /// The chapter immediately after [chapterId]. Returns `null` at the very
@@ -50,17 +50,62 @@ abstract final class ChapterNavigation {
 
     final book = books[bookIndex];
     final chapters = book.chapters ?? const [];
-    final chapterIndex = chapters.indexWhere((c) => c.id == chapterId);
+    final introId = _introId(book);
+    if (introId != null && chapterId == introId) {
+      // Already at this book's intro - the next entry point is this
+      // book's first chapter.
+      if (chapters.isNotEmpty) return _chapterId(chapters.first);
+      return _nextBookEntryPoint(books, bookIndex);
+    }
+
+    final chapterIndex = chapters.indexWhere((c) => _chapterId(c) == chapterId);
     if (chapterIndex == -1) return null;
 
-    if (chapterIndex < chapters.length - 1) return chapters[chapterIndex + 1].id;
+    if (chapterIndex < chapters.length - 1) return _chapterId(chapters[chapterIndex + 1]);
 
-    for (var i = bookIndex + 1; i < books.length; i++) {
-      final nextBook = books[i];
-      if (nextBook.intro != null) return '${nextBook.id}.intro';
-      final nextChapters = nextBook.chapters ?? const [];
-      if (nextChapters.isNotEmpty) return nextChapters.first.id;
+    return _nextBookEntryPoint(books, bookIndex);
+  }
+
+  static String? _previousBookEntryPoint(List<BibleBook> books, int bookIndex) {
+    for (var i = bookIndex - 1; i >= 0; i--) {
+      final previousBook = books[i];
+      final previousChapters = previousBook.chapters ?? const [];
+      if (previousChapters.isNotEmpty) return _chapterId(previousChapters.last);
+      final introId = _introId(previousBook);
+      if (introId != null) return introId;
     }
     return null;
   }
+
+  static String? _nextBookEntryPoint(List<BibleBook> books, int bookIndex) {
+    for (var i = bookIndex + 1; i < books.length; i++) {
+      final nextBook = books[i];
+      final introId = _introId(nextBook);
+      if (introId != null) return introId;
+      final nextChapters = nextBook.chapters ?? const [];
+      if (nextChapters.isNotEmpty) return _chapterId(nextChapters.first);
+    }
+    return null;
+  }
+
+  /// The real passage id for [book]'s intro (e.g. `"GEN.INTRO"`), as
+  /// returned by the API - **not** a guessed/synthesized string. Confirmed
+  /// live against `GET /v1/bibles/{id}/index` + `GET .../passages/{id}`:
+  /// the intro's `passage_id` is uppercase `INTRO`, no relation to the
+  /// lowercase `.intro` this code used to hardcode (which 404s).
+  static String? _introId(BibleBook book) {
+    final intro = book.intro;
+    if (intro == null) return null;
+    return intro.passageId ?? intro.id;
+  }
+
+  /// The real full USFM id for [chapter] (e.g. `"JHN.3"`) - **not**
+  /// [BibleChapter.id], which is confirmed live to be just the bare local
+  /// chapter number (e.g. `"3"`), never a full reference. Every
+  /// `chapterId` this class deals in is a full passage id, matching what
+  /// `YouVersionContentClient.getPassage` expects - comparing/returning
+  /// `chapter.id` directly used to make `chapterIndex` always resolve to
+  /// `-1` against a real API response, silently breaking prev/next
+  /// navigation entirely.
+  static String _chapterId(BibleChapter chapter) => chapter.passageId ?? chapter.id;
 }

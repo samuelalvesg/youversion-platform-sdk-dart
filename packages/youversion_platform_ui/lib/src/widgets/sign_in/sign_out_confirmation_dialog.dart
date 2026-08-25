@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/youversion_ui_strings.dart';
+
 /// Whether unsynced local highlights exist at sign-out time - changes the
 /// dialog's copy to warn about losing them.
 enum SignOutWarning { none, unsyncedHighlights }
@@ -19,24 +21,23 @@ class SignOutConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = youVersionUiStringsOf(context);
     final message = switch (warning) {
-      SignOutWarning.none => 'You can sign back in at any time.',
-      SignOutWarning.unsyncedHighlights =>
-        'Some of your highlights have not finished syncing yet. '
-            'They will not be saved to your account if you sign out now.',
+      SignOutWarning.none => strings.signOutNoneMessage,
+      SignOutWarning.unsyncedHighlights => strings.signOutUnsyncedMessage,
     };
 
     return AlertDialog(
-      title: const Text('Sign out?'),
+      title: Text(strings.signOutTitle),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(strings.cancelButton)),
         FilledButton(
           onPressed: () {
             Navigator.of(context).pop();
             onConfirm();
           },
-          child: const Text('Sign out'),
+          child: Text(strings.signOutButton),
         ),
       ],
     );

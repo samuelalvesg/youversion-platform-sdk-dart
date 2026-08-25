@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:youversion_platform_core/youversion_platform_core.dart';
 
+import '../l10n/youversion_reader_strings.dart';
+
 /// Book/chapter picker with search - navigate to any chapter of the
 /// current [BibleVersionIndex]. Mirrors `platform-reader`'s
 /// `screens/references/ReferencesScreen.kt` (Kotlin).
@@ -26,14 +28,14 @@ class _ReferencesScreenState extends State<ReferencesScreen> {
   Widget build(BuildContext context) {
     final books = widget.index.books ?? const [];
     final query = _query.trim().toLowerCase();
-    final filtered = query.isEmpty
-        ? books
-        : books.where((book) => (book.title ?? book.id).toLowerCase().contains(query)).toList();
+    final filtered =
+        query.isEmpty ? books : books.where((book) => (book.title ?? book.id).toLowerCase().contains(query)).toList();
+    final strings = youVersionReaderStringsOf(context);
 
     return Scaffold(
       appBar: AppBar(
         title: TextField(
-          decoration: const InputDecoration(hintText: 'Search books', border: InputBorder.none),
+          decoration: InputDecoration(hintText: strings.searchBooksHint, border: InputBorder.none),
           onChanged: (value) => setState(() => _query = value),
         ),
       ),
@@ -59,13 +61,20 @@ class _ReferencesScreenState extends State<ReferencesScreen> {
                     children: [
                       if (book.intro != null)
                         ActionChip(
-                          label: const Text('Intro'),
-                          onPressed: () => widget.onChapterSelected('${book.id}.intro'),
+                          label: Text(strings.introChipLabel),
+                          // The real passage id (e.g. "GEN.INTRO"), not a
+                          // guessed "GEN.intro" string - see
+                          // ChapterNavigation._introId.
+                          onPressed: () => widget.onChapterSelected(book.intro!.passageId ?? book.intro!.id),
                         ),
                       for (final chapter in book.chapters ?? const [])
                         ActionChip(
-                          label: Text(chapter.title ?? chapter.id.split('.').last),
-                          onPressed: () => widget.onChapterSelected(chapter.id),
+                          label: Text(chapter.title ?? chapter.id),
+                          // The real full USFM id (e.g. "JHN.3"), not
+                          // BibleChapter.id (confirmed live to be just the
+                          // bare local number, e.g. "3") - see
+                          // ChapterNavigation._chapterId.
+                          onPressed: () => widget.onChapterSelected(chapter.passageId ?? chapter.id),
                         ),
                     ],
                   ),

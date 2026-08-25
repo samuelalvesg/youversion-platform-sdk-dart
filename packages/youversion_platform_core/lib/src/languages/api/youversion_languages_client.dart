@@ -1,4 +1,5 @@
 import '../../content/models/collection.dart';
+import '../../http/youversion_exception.dart';
 import '../../http/youversion_http_client.dart';
 import '../../http/youversion_sdk_headers.dart';
 import '../models/language.dart';
@@ -22,8 +23,12 @@ class YouVersionLanguagesClient {
   final Uri _baseUri;
   final YouVersionHttpClient _http;
 
-  Map<String, String> get _headers =>
-      youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
+  Map<String, String> get _headers => youVersionSdkHeaders(appKey: _appKey, installationId: _installationId);
+
+  /// `401` = missing/invalid `X-YVP-App-Key` - confirmed live, same as
+  /// `YouVersionContentClient._reasonForGet`.
+  YouVersionErrorReason _reasonForGet(int status) =>
+      status == 401 ? YouVersionErrorReason.missingAuthentication : YouVersionErrorReason.cannotDownload;
 
   /// Lists supported languages. [country] filters by country (ISO 3166-1
   /// alpha-2). [fields] requests a sparse fieldset (1-3 fields forces
@@ -43,14 +48,14 @@ class YouVersionLanguagesClient {
         if (pageToken != null) 'page_token': pageToken,
       },
     );
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     return YouVersionCollection.fromJson(json, Language.fromJson);
   }
 
   /// Fetches a language by id.
   Future<Language> getLanguage(String languageId) async {
     final uri = _baseUri.replace(path: '/v1/languages/$languageId');
-    final json = await _http.getJson(uri, headers: _headers);
+    final json = await _http.getJson(uri, headers: _headers, reasonForStatus: _reasonForGet);
     final data = json['data'];
     return Language.fromJson(data is Map<String, dynamic> ? data : json);
   }

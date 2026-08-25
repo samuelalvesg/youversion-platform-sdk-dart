@@ -19,7 +19,7 @@ Repo: <https://github.com/samuelalvesg/youversion-platform-sdk-dart>
 | `youversion_platform_ui` | [`packages/youversion_platform_ui`](packages/youversion_platform_ui) | Flutter widgets (sign-in button, Bible/VOTD cards, pickers, verse actions) - equivalent to `platform-ui` |
 | `youversion_platform_reader` | [`packages/youversion_platform_reader`](packages/youversion_platform_reader) | Flutter full Bible-reading screen - equivalent to `platform-reader` |
 
-`_ui`/`_reader` are pre-release (`0.1.0`, not yet published to pub.dev,
+`_ui`/`_reader` are pre-release (`0.2.0`, not yet published to pub.dev,
 depend on `_core` via local `path:`) - see `docs/DECISIONS.md` for the
 3-package split rationale.
 

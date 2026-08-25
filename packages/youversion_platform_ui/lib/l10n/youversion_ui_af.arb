@@ -1,0 +1,23 @@
+{
+  "@@locale": "af",
+  "verseOfTheDayLabel": "Vers-van-die-dag",
+  "searchLanguagesHint": "Soek tale",
+  "closeButton": "Sluit",
+  "clearHighlightTooltip": "Verwyder kleurmerk",
+  "copyButton": "Kopieer",
+  "shareButton": "Deel",
+  "signOutUnsyncedMessage": "Sommige van jou hoogtepunte is nog nie gestoor nie, en hulle sal verlore gaan as jy uitmelú. Wil jy nogsteeds uitmeld?",
+  "cancelButton": "Kanselleer",
+  "signOutButton": "Teken uit",
+  "signInWithYouVersionLabel": "Teken in met {brandName}",
+  "highlightColorsLabel": "Merkkleure",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

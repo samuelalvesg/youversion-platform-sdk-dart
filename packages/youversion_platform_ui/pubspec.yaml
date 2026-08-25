@@ -4,7 +4,7 @@ description: >-
   button, Bible card, verse-of-the-day card, version/language pickers and
   verse action sheet. No state-management dependency - widgets take data
   and callbacks.
-version: 0.1.0
+version: 0.3.0
 homepage: https://github.com/samuelalvesg/youversion-platform-sdk-dart
 repository: https://github.com/samuelalvesg/youversion-platform-sdk-dart
 topics:
@@ -21,6 +21,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+  html: ^0.15.0
   youversion_platform_core:
     path: ../youversion_platform_core
 
@@ -30,3 +34,4 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
 flutter:
+  generate: true

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/youversion_ui_strings.dart';
 import 'youversion_sign_in_button.dart';
 
 /// Bottom sheet explaining why sign-in is being requested, before opening
@@ -24,6 +25,7 @@ class SignInPromptSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = youVersionUiStringsOf(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -38,7 +40,7 @@ class SignInPromptSheet extends StatelessWidget {
             YouVersionSignInButton(onPressed: onConfirm),
             if (onDismiss != null) ...[
               const SizedBox(height: 8),
-              TextButton(onPressed: onDismiss, child: const Text('Not now')),
+              TextButton(onPressed: onDismiss, child: Text(strings.notNowButton)),
             ],
           ],
         ),

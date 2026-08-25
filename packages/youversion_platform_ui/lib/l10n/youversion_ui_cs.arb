@@ -1,0 +1,23 @@
+{
+  "@@locale": "cs",
+  "verseOfTheDayLabel": "Verš dne",
+  "searchLanguagesHint": "Hledat jazyky",
+  "closeButton": "Zavřít",
+  "clearHighlightTooltip": "Vymazat zvýraznění",
+  "copyButton": "Kopírovat",
+  "shareButton": "Sdílet",
+  "signOutUnsyncedMessage": "Některá vaše zvýraznění ještě nebyla uložena a budou ztracena, pokud se odhlásíte. Chcete se přesto odhlásit?",
+  "cancelButton": "Zrušit",
+  "signOutButton": "Odhlášení",
+  "signInWithYouVersionLabel": "Přihlásit se pomocí {brandName}",
+  "highlightColorsLabel": "Barvy zvýraznění",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

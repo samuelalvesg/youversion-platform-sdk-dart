@@ -1,0 +1,23 @@
+{
+  "@@locale": "ko",
+  "verseOfTheDayLabel": "오늘의 말씀",
+  "searchLanguagesHint": "언어 검색",
+  "closeButton": "닫기",
+  "clearHighlightTooltip": "하이라이트 지우기",
+  "copyButton": "복사",
+  "shareButton": "공유",
+  "signOutUnsyncedMessage": "일부 하이라이트가 아직 저장되지 않았으며, 로그아웃하면 삭제됩니다. 그래도 로그아웃하시겠습니까?",
+  "cancelButton": "취소",
+  "signOutButton": "로그아웃",
+  "signInWithYouVersionLabel": "{brandName} 서비스로 로그인",
+  "highlightColorsLabel": "하이라이트 색상",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

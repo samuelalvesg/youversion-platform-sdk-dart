@@ -1,0 +1,43 @@
+{
+  "@@locale": "en",
+  "bibleFallbackTitle": "Bible",
+  "fontSettingsTooltip": "Font settings",
+  "fontSizeLabel": "Font size",
+  "lineSpacingLabel": "Line spacing",
+  "searchBooksHint": "Search",
+  "introChipLabel": "Intro",
+  "previousChapterTooltip": "Previous chapter",
+  "nextChapterTooltip": "Next chapter",
+  "decreaseFontSizeTooltip": "Decrease font size",
+  "increaseFontSizeTooltip": "Increase font size",
+  "themeLabel": "Theme",
+  "themePureWhite": "Pure White",
+  "themeSepia": "Sepia",
+  "themePaperGray": "Paper Gray",
+  "themeCream": "Cream",
+  "themeCharcoal": "Charcoal",
+  "themeMidnightBlue": "Midnight Blue",
+  "themeTrueBlack": "True Black",
+  "changeVersionTooltip": "Change Bible version",
+  "tryAgainButton": "Try again",
+  "rateLimitedError": "Too many requests - please wait a bit before trying again.",
+  "@rateLimitedError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.rateLimited (HTTP 429)."
+  },
+  "signInRequiredError": "Sign in required (or your session expired).",
+  "@signInRequiredError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.missingAuthentication."
+  },
+  "notPermittedError": "Not permitted for this account.",
+  "@notPermittedError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.notPermitted."
+  },
+  "invalidResponseError": "Unexpected response from the server.",
+  "@invalidResponseError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.invalidResponse."
+  },
+  "loadFailedError": "Could not load this chapter.",
+  "@loadFailedError": {
+    "description": "Generic fallback shown when a chapter load fails for any other reason."
+  }
+}

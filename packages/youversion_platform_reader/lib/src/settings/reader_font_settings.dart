@@ -1,4 +1,7 @@
-/// Reading font/spacing preferences, persisted via [ReaderSettingsStorage].
+import 'reader_theme.dart';
+
+/// Reading font/spacing/theme preferences, persisted via
+/// [ReaderSettingsStorage].
 ///
 /// Sizes/spacings match the official readers' font-size setting
 /// (`ReaderFontSettings.kt`, Kotlin): sizes `[9, 12, 15, 18, 21, 24]`,
@@ -11,7 +14,7 @@ class ReaderFontSettings {
     this.fontSize = 15,
     this.lineHeight = 1.5,
     this.fontFamily,
-    this.darkMode = false,
+    this.theme = ReaderTheme.pureWhite,
   });
 
   static const List<double> availableFontSizes = [9, 12, 15, 18, 21, 24];
@@ -20,19 +23,35 @@ class ReaderFontSettings {
   final double fontSize;
   final double lineHeight;
   final String? fontFamily;
-  final bool darkMode;
+  final ReaderTheme theme;
+
+  /// The next-smaller preset in [availableFontSizes], or [fontSize]
+  /// unchanged if already at the smallest - no wraparound. Mirrors
+  /// Kotlin's `ReaderFontSettings.kt` smaller/bigger buttons.
+  double get nextSmallerFontSize => _step(availableFontSizes, fontSize, -1);
+
+  /// The next-larger preset in [availableFontSizes], or [fontSize]
+  /// unchanged if already at the largest - no wraparound.
+  double get nextLargerFontSize => _step(availableFontSizes, fontSize, 1);
+
+  static double _step(List<double> presets, double current, int direction) {
+    final index = presets.indexOf(current);
+    final nextIndex = (index == -1 ? presets.indexWhere((p) => p >= current) : index) + direction;
+    if (nextIndex < 0 || nextIndex >= presets.length) return current;
+    return presets[nextIndex];
+  }
 
   ReaderFontSettings copyWith({
     double? fontSize,
     double? lineHeight,
     String? fontFamily,
-    bool? darkMode,
+    ReaderTheme? theme,
   }) {
     return ReaderFontSettings(
       fontSize: fontSize ?? this.fontSize,
       lineHeight: lineHeight ?? this.lineHeight,
       fontFamily: fontFamily ?? this.fontFamily,
-      darkMode: darkMode ?? this.darkMode,
+      theme: theme ?? this.theme,
     );
   }
 
@@ -40,7 +59,7 @@ class ReaderFontSettings {
         'font_size': fontSize,
         'line_height': lineHeight,
         'font_family': fontFamily,
-        'dark_mode': darkMode,
+        'theme': theme.name,
       };
 
   factory ReaderFontSettings.fromJson(Map<String, dynamic> json) {
@@ -48,7 +67,7 @@ class ReaderFontSettings {
       fontSize: (json['font_size'] as num?)?.toDouble() ?? 15,
       lineHeight: (json['line_height'] as num?)?.toDouble() ?? 1.5,
       fontFamily: json['font_family'] as String?,
-      darkMode: json['dark_mode'] as bool? ?? false,
+      theme: ReaderTheme.fromName(json['theme'] as String?),
     );
   }
 }

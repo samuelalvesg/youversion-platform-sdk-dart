@@ -1,0 +1,29 @@
+{
+  "@@locale": "pt",
+  "searchBooksHint": "Pesquisar",
+  "previousChapterTooltip": "Capítulo anterior",
+  "nextChapterTooltip": "Próximo capítulo",
+  "decreaseFontSizeTooltip": "Diminuir tamanho da fonte",
+  "increaseFontSizeTooltip": "Aumentar tamanho da fonte",
+  "changeVersionTooltip": "Alterar versão da Bíblia",
+  "rateLimitedError": "Muitas requisições - aguarde um pouco antes de tentar de novo.",
+  "@rateLimitedError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.rateLimited (HTTP 429)."
+  },
+  "signInRequiredError": "É preciso entrar na conta (ou sua sessão expirou).",
+  "@signInRequiredError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.missingAuthentication."
+  },
+  "notPermittedError": "Não permitido para esta conta.",
+  "@notPermittedError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.notPermitted."
+  },
+  "invalidResponseError": "Resposta inesperada do servidor.",
+  "@invalidResponseError": {
+    "description": "Shown when a chapter load fails with YouVersionErrorReason.invalidResponse."
+  },
+  "loadFailedError": "Não foi possível carregar este capítulo.",
+  "@loadFailedError": {
+    "description": "Generic fallback shown when a chapter load fails for any other reason."
+  }
+}

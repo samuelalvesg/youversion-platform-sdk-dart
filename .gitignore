@@ -8,3 +8,15 @@ pubspec.lock
 
 # Personal/local notes - not part of the public open-source repo.
 BACKLOG.md
+
+# Local clones of official SDKs, used as cross-check reference. Not part
+# of this repo's history - see docs/DECISIONS.md gap-analysis methodology.
+.references-repo/
+
+# Real App Key for manual/live API smoke testing - never committed.
+.env
+
+# Same App Key, --dart-define-from-file shape for VS Code launch.json
+# (packages/youversion_platform_reader/example/env/dev.json.example is the
+# tracked template).
+packages/youversion_platform_reader/example/env/dev.json

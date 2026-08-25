@@ -1,0 +1,23 @@
+{
+  "@@locale": "vi",
+  "verseOfTheDayLabel": "Câu Kinh Thánh Trong Ngày",
+  "searchLanguagesHint": "Tìm kiếm ngôn ngữ",
+  "closeButton": "Đóng",
+  "clearHighlightTooltip": "Xóa đánh dấu",
+  "copyButton": "Sao Chép",
+  "shareButton": "Chia sẻ",
+  "signOutUnsyncedMessage": "Một số điểm nổi bật của bạn chưa được lưu và sẽ bị mất nếu bạn đăng xuất. Bạn có muốn đăng xuất không?",
+  "cancelButton": "Hủy",
+  "signOutButton": "Đăng xuất",
+  "signInWithYouVersionLabel": "Đăng nhập bằng {brandName}",
+  "highlightColorsLabel": "Màu đánh dấu",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

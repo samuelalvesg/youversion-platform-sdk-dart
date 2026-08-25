@@ -1,3 +1,37 @@
+## Unreleased
+
+- Added `YouVersionErrorReason.rateLimited` (`429`), applied universally
+  across every client ahead of any endpoint-specific `reasonForStatus` -
+  see `docs/DECISIONS.md`.
+- `YouVersionContentClient`/`YouVersionLanguagesClient`/
+  `YouVersionOrganizationsClient` now map `401` (missing/invalid App Key)
+  to `YouVersionErrorReason.missingAuthentication`, confirmed live -
+  previously these 3 had no `reasonForStatus` at all.
+- `getPassage`'s doc comment now states `format` is `'html'`/`'text'` only
+  - confirmed live against the API; `'json'` (which appeared as a raw
+    string in Kotlin's own URL-building tests) 404s.
+- Added `YouVersionSignIn.resolveCallback` + `YouVersionHttpClient.getRedirectLocation`.
+  **Real, confirmed-live gap**: this package's Sign-In doc comment
+  previously assumed the `/auth/authorize` redirect always lands with
+  `code` directly in the query string - wrong for at least some App Key
+  configurations, which redirect with only `state`/`granted_permissions`
+  first and require an extra `/auth/callback` hop (matches what Kotlin's
+  `UsersEndpoints.kt` always does internally via `obtainLocation`/
+  `obtainCode`, which this package's public API never exposed). Not
+  usable on Flutter Web - browsers don't expose a cross-origin manual
+  redirect's `Location` header to JS at all. See `docs/DECISIONS.md`.
+- **Fixed a real bug** (confirmed live, crashed `exchangeCode` mid-flow):
+  `YouVersionToken.fromJson` cast `expires_in` straight to `int`, but the
+  server actually sends it as a string. Now accepts `int`/`String`/`num`.
+- **Fixed a real bug** (confirmed live, crashed `createHighlight`/
+  `listHighlights`): `Highlight.id` was cast straight to `String`, but the
+  server can omit it entirely - matches Kotlin's own `id: String? = null`.
+  Now `String?`. See `docs/DECISIONS.md`.
+- Added `YouVersionException.retryAfter` (`Duration?`), parsed from a
+  `429`'s `Retry-After` header (confirmed live, an integer-seconds string
+  - `600` = 10 minutes). Lets callers show a real wait time / disable a
+  retry button instead of inviting another guaranteed-to-fail request.
+
 ## 0.2.0
 
 Gap-closing release: contracts cross-validated against the source code of

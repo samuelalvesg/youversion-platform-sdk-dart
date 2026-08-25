@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/youversion_ui_strings.dart';
+
 /// Alert shown when the OAuth sign-in flow fails. Mirrors `platform-ui`'s
 /// `signin/SignInErrorAlert.kt` (Kotlin).
 ///
@@ -12,18 +14,19 @@ class SignInErrorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = youVersionUiStringsOf(context);
     return AlertDialog(
-      title: const Text('Sign-in failed'),
-      content: Text(message ?? 'Something went wrong while signing in with YouVersion.'),
+      title: Text(strings.signInFailedTitle),
+      content: Text(message ?? strings.signInFailedMessage),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(strings.closeButton)),
         if (onRetry != null)
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               onRetry!();
             },
-            child: const Text('Try again'),
+            child: Text(strings.tryAgainButton),
           ),
       ],
     );

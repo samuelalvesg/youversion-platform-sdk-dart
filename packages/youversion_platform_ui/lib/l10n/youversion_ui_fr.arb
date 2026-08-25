@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr",
+  "verseOfTheDayLabel": "Verset du Jour",
+  "clearHighlightTooltip": "Supprimer le surlignage",
+  "copyButton": "Copier",
+  "shareButton": "Partager",
+  "signOutButton": "Se déconnecter",
+  "signInWithYouVersionLabel": "Se connecter avec {brandName}",
+  "highlightColorsLabel": "Couleurs de surlignage",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

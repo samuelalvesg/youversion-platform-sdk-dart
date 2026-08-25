@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:youversion_platform_core/youversion_platform_core.dart';
 
+import '../l10n/youversion_ui_strings.dart';
+
 /// Searchable list of [Bible]s, e.g. for a "change translation" sheet.
 ///
 /// Receives an already-fetched `List<Bible>` (from
@@ -36,6 +38,7 @@ class _BibleVersionPickerState extends State<BibleVersionPicker> {
             final abbreviation = bible.abbreviation?.toLowerCase() ?? '';
             return title.contains(query) || abbreviation.contains(query);
           }).toList();
+    final strings = youVersionUiStringsOf(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -44,10 +47,10 @@ class _BibleVersionPickerState extends State<BibleVersionPicker> {
         Padding(
           padding: const EdgeInsets.all(12),
           child: TextField(
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Search translations',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: strings.searchTranslationsHint,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (value) => setState(() => _query = value),
           ),
@@ -59,7 +62,7 @@ class _BibleVersionPickerState extends State<BibleVersionPicker> {
             itemBuilder: (context, index) {
               final bible = filtered[index];
               return ListTile(
-                title: Text(bible.title ?? bible.abbreviation ?? 'Bible ${bible.id}'),
+                title: Text(bible.title ?? bible.abbreviation ?? strings.bibleIdFallbackLabel(bible.id)),
                 subtitle: bible.abbreviation != null ? Text(bible.abbreviation!) : null,
                 selected: bible.id == widget.selectedBibleId,
                 trailing: bible.id == widget.selectedBibleId ? const Icon(Icons.check) : null,

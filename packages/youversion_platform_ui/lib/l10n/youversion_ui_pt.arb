@@ -1,0 +1,23 @@
+{
+  "@@locale": "pt",
+  "verseOfTheDayLabel": "Versículo do Dia",
+  "searchLanguagesHint": "Pesquisar idiomas",
+  "closeButton": "Fechar",
+  "clearHighlightTooltip": "Limpar destaque",
+  "copyButton": "Copiar",
+  "shareButton": "Compartilhar",
+  "signOutUnsyncedMessage": "Alguns dos seus destaques ainda não foram salvos e serão perdidos se você sair. Deseja sair mesmo assim?",
+  "cancelButton": "Cancelar",
+  "signOutButton": "Sair",
+  "signInWithYouVersionLabel": "Entrar com {brandName}",
+  "highlightColorsLabel": "Cores de destaque",
+  "bibleIdFallbackLabel": "Bíblia {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

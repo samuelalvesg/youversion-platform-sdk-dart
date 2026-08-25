@@ -1,0 +1,23 @@
+{
+  "@@locale": "zh",
+  "verseOfTheDayLabel": "今日經文",
+  "searchLanguagesHint": "搜尋語言",
+  "closeButton": "關閉",
+  "clearHighlightTooltip": "清除螢光筆",
+  "copyButton": "複製",
+  "shareButton": "分享",
+  "signOutUnsyncedMessage": "你部分的重點標記尚未儲存，如果你登出，這些標記將會遺失。你確定仍要登出嗎？",
+  "cancelButton": "取消",
+  "signOutButton": "登出",
+  "signInWithYouVersionLabel": "以 {brandName}登入",
+  "highlightColorsLabel": "螢光筆顏色",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

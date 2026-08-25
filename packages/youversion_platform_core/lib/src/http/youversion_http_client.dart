@@ -19,6 +19,39 @@ class YouVersionHttpClient {
   final http.Client _client;
   final Duration timeout;
 
+  /// GETs [uri] without following redirects, returning the `Location`
+  /// header of the resulting `3xx` response. Used by
+  /// `YouVersionSignIn.resolveCallback` - see its doc comment.
+  ///
+  /// **Not supported on Flutter Web**: browsers make a manual-redirect
+  /// fetch response opaque (no readable status/headers) for cross-origin
+  /// requests, by design - this throws [YouVersionErrorReason.invalidResponse]
+  /// there rather than silently returning nothing.
+  Future<Uri> getRedirectLocation(Uri uri, {Map<String, String>? headers}) async {
+    final request = http.Request('GET', uri)
+      ..followRedirects = false
+      ..headers.addAll(headers ?? const {});
+    final streamedResponse = await _client.send(request).timeout(timeout);
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode < 300 || response.statusCode >= 400) {
+      throw YouVersionException(
+        'Expected a redirect (3xx) response',
+        statusCode: response.statusCode,
+        body: response.body,
+        reason: YouVersionErrorReason.invalidResponse,
+      );
+    }
+    final location = response.headers['location'];
+    if (location == null) {
+      throw YouVersionException(
+        'Redirect response has no Location header',
+        statusCode: response.statusCode,
+        reason: YouVersionErrorReason.invalidResponse,
+      );
+    }
+    return Uri.parse(location);
+  }
+
   Future<Map<String, dynamic>> getJson(
     Uri uri, {
     Map<String, String>? headers,
@@ -34,8 +67,7 @@ class YouVersionHttpClient {
     Map<String, String>? headers,
     YouVersionErrorReason Function(int statusCode)? reasonForStatus,
   }) async {
-    final response =
-        await _client.post(uri, headers: headers, body: body).timeout(timeout);
+    final response = await _client.post(uri, headers: headers, body: body).timeout(timeout);
     return _decode(response, reasonForStatus);
   }
 
@@ -108,13 +140,23 @@ class YouVersionHttpClient {
     http.Response response,
     YouVersionErrorReason Function(int statusCode)? reasonForStatus,
   ) {
+    final isRateLimited = response.statusCode == 429;
     return YouVersionException(
       'Request failed',
       statusCode: response.statusCode,
       body: response.body,
-      reason: reasonForStatus?.call(response.statusCode) ??
-          YouVersionErrorReason.cannotDownload,
+      reason: isRateLimited
+          ? YouVersionErrorReason.rateLimited
+          : reasonForStatus?.call(response.statusCode) ?? YouVersionErrorReason.cannotDownload,
+      // Confirmed live: sent as a plain integer number of seconds (not an
+      // HTTP-date, the header's other allowed form), e.g. `600` (10 min).
+      retryAfter: isRateLimited ? _parseRetryAfter(response.headers['retry-after']) : null,
     );
+  }
+
+  Duration? _parseRetryAfter(String? headerValue) {
+    final seconds = headerValue == null ? null : int.tryParse(headerValue);
+    return seconds == null ? null : Duration(seconds: seconds);
   }
 
   void close() => _client.close();

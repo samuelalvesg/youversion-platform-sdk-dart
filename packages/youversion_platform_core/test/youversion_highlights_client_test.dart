@@ -65,9 +65,11 @@ void main() {
       final mockClient = MockClient((request) async {
         expect(request.url.path, '/v1/highlights');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['request_id'], matches(RegExp(
-          r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-        )));
+        expect(
+            body['request_id'],
+            matches(RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            )));
         final highlight = body['highlight'] as Map<String, dynamic>;
         expect(highlight['color'], 'fffe00');
         return http.Response(
@@ -96,6 +98,40 @@ void main() {
       );
 
       expect(result.id, 'hl-1');
+    });
+
+    test('createHighlight/listHighlights tolerate a null "id" - confirmed live, the server sends this', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'data': {
+              // No "id" key at all - matches Kotlin's own model
+              // (`id: String? = null`), and a real create/list response
+              // observed live. Previously crashed `Highlight.fromJson`
+              // with an uncaught type-cast error.
+              'bible_id': 111,
+              'passage_id': 'MAT.1.1',
+              'color': 'fffe00',
+            },
+          }),
+          201,
+        );
+      });
+
+      final highlights = YouVersionHighlightsClient(
+        appKey: 'my-app-key',
+        httpClient: YouVersionHttpClient(client: mockClient),
+      );
+
+      final result = await highlights.createHighlight(
+        userAccessToken: 'access-1',
+        bibleId: 111,
+        passageId: 'MAT.1.1',
+        color: 'fffe00',
+      );
+
+      expect(result.id, isNull);
+      expect(result.color, 'fffe00');
     });
 
     test('createHighlight 403 throws notPermitted', () async {

@@ -21,9 +21,16 @@ class BibleTextTheme extends ThemeExtension<BibleTextTheme> {
     required this.caption,
   });
 
-  factory BibleTextTheme.fallback({String? fontFamily}) {
+  /// [color] is left `null` by default (inherits from the ambient
+  /// [DefaultTextStyle]) - pass it explicitly when the caller is about to
+  /// override [ThemeData.colorScheme] independently of [ThemeData.textTheme]
+  /// (e.g. a reading theme that doesn't match the host app's own light/dark
+  /// setting): `ThemeData.copyWith(colorScheme: ...)` does **not** recolor
+  /// an already-resolved `textTheme`, so text relying on ambient
+  /// inheritance can end up dark-on-dark/light-on-light in that case.
+  factory BibleTextTheme.fallback({String? fontFamily, Color? color}) {
     TextStyle style(double size, {FontWeight weight = FontWeight.normal, double height = 1.5}) {
-      return TextStyle(fontFamily: fontFamily, fontSize: size, fontWeight: weight, height: height);
+      return TextStyle(fontFamily: fontFamily, fontSize: size, fontWeight: weight, height: height, color: color);
     }
 
     return BibleTextTheme(

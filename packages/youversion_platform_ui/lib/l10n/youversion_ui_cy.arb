@@ -1,0 +1,23 @@
+{
+  "@@locale": "cy",
+  "verseOfTheDayLabel": "Adnod y Dydd",
+  "searchLanguagesHint": "Chwilio ieithoedd",
+  "closeButton": "Cau",
+  "clearHighlightTooltip": "Clirio amlygu",
+  "copyButton": "Copïo",
+  "shareButton": "Rhannu",
+  "signOutUnsyncedMessage": "Nid yw rhai o'ch amlygiadau wedi'u cadw eto, a byddan nhw'n cael eu colli os byddi di'n allgofnodi. A wyt am allgofnodi beth bynnag?",
+  "cancelButton": "Canslo",
+  "signOutButton": "Allgofnodi",
+  "signInWithYouVersionLabel": "Mewngofnodi gyda {brandName}",
+  "highlightColorsLabel": "Lliwiau amlygu",
+  "bibleIdFallbackLabel": "Bible {id}",
+  "@bibleIdFallbackLabel": {
+    "description": "Fallback label for a Bible with no title/abbreviation available.",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}
