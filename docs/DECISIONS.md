@@ -1062,6 +1062,123 @@ the official SDKs actually do before inventing a format:
   share format includes one - the version abbreviation already in the
   reference line is the attribution.
 
+## 2026-08-24 (cont. 11): desktop loopback sign-in (RFC 8252)
+
+User wanted the paste-the-callback-URL desktop sign-in flow replaced with
+a real automatic one, same idea Symmetris' own Flutter desktop app uses:
+open the system browser for login, catch the redirect on a temporary
+local HTTP server instead of a custom-scheme deep link (which the OS
+never registers for a desktop build the way it does on Android/iOS).
+
+Added `OAuthLoopbackServer` to `_core` (`sign_in/oauth_loopback_server.dart`)
+- plain `dart:io` `HttpServer.bind(InternetAddress.loopbackIPv4, port)`,
+  no new dependency (not even `shelf`). `start()`/`waitForCallback()`/
+  `dispose()`, closes itself after exactly one request or a timeout.
+
+**Real cross-platform-compile risk caught before it shipped**: exporting
+this from the package's top-level barrel unconditionally would have broken
+*any* Flutter Web build of *any* app depending on this package, even one
+that never touches sign-in at all - `dart:io` doesn't compile for web,
+full stop, and Dart resolves `export`s at compile time regardless of
+whether the symbol is ever used. Fixed with a conditional export
+(`export 'oauth_loopback_server_stub.dart' if (dart.library.io)
+'oauth_loopback_server.dart'`) - a stub with the identical public API
+(`start()` just throws `UnsupportedError`) stands in on web. Same
+reasoning applied to the demo app's own platform check: used
+`defaultTargetPlatform`/`kIsWeb` (`package:flutter/foundation.dart`)
+instead of `Platform.isLinux` etc., since the example app also has a
+`web/` target and a bare `dart:io` import in `sign_in_page.dart` would
+have broken *that* build the same way.
+
+**Fixed port, not OS-assigned** (`port: 0`) - RFC 8252 §7.3 says the
+*port* specifically shouldn't need pre-registration for a loopback
+redirect_uri, but whether YouVersion's `/auth/authorize` actually
+implements that leniency or does an exact string match including the
+port was not confirmed ahead of time, so a fixed port works under either
+behavior. `8952` was picked and registered.
+
+**This App Key only supports one registered `redirect_uri`, not several**
+- confirmed live: the original plan here was a *second* redirect_uri
+  registered alongside the existing Symmetris one (paste-flow keeps
+  working regardless of whether loopback registration was done), each
+  flow using its own `YouVersionSignIn` instance. Pointing
+  `/auth/authorize` at the unregistered loopback URI while Symmetris was
+  still the registered one didn't error - it silently landed back on
+  Symmetris instead (matches `/auth/authorize`'s own behavior seen
+  earlier for `resolveCallback`: it tends to fail soft, not loud). Fixed
+  by simply replacing the single registered `redirect_uri` with the
+  loopback one - `SignInPage` now uses `widget.signIn` (one instance) for
+  both flows, deriving `OAuthLoopbackServer`'s `port`/`path` by parsing
+  `widget.signIn.redirectUri` rather than a separate constant, so
+  there's exactly one source of truth for what's actually registered.
+  The desktop auto-sign-in button only shows when that `redirectUri` is
+  actually a loopback address (`_isLoopbackUri`), guarding against
+  `OAuthLoopbackServer` trying to bind an unrelated port (e.g. `443`) if
+  it's ever changed back to something else.
+
+**A second, more interesting bug** surfaced once the redirect_uri was
+right: the browser genuinely landed on `http://127.0.0.1:8952/callback`
+with the real `state`/`granted_permissions`, but the local server "didn't
+respond." Symmetris' own `OAuthLoopbackServer` (which this was modeled
+on, confirmed working in their production app) uses the exact same
+`server.first` pattern - grab whichever request arrives first, answer it,
+close. The difference: Symmetris' loopback redirect always comes from
+*their own backend*, which only ever issues one clean request here.
+Here, the redirect comes from a real third-party login/consent page
+(login.youversion.com) - if its page issues anything else to this origin
+first (a favicon request, a CORS preflight), `server.first` answered
+*that* instead and closed the server before the real navigation request
+ever arrived - "the port already stopped responding" is exactly what a
+closed listening socket looks like from the browser's side. Fixed by
+looping instead of taking the first event: only a request matching the
+expected `path` resolves/closes the server, everything else gets a `404`
+and the server stays open. Added a regression test
+(`oauth_loopback_server_test.dart`) simulating exactly this - a stray
+`/favicon.ico` request before the real `/callback` one - to lock it in.
+
+## 2026-08-24 (cont. 12): VOTD picker - chips, then Wrap, then a date picker
+
+VOTD's day-strip went through 3 iterations before landing right:
+
+1. Horizontal-scrolling `ListView` of 366 `ChoiceChip`s - confirmed live,
+   scrolling that many chips sideways past the edge of the screen (no
+   visible affordance that there's more) read as "passing the width of
+   the screen".
+2. Switched to `Wrap` (matches Bible Explorer's book/chapter/verse chips
+   - wraps to multiple rows instead of scrolling one long row). Fixed the
+   width complaint, but 366 chips wrapped into rows just took over the
+   whole screen instead - a real "too many items" problem, not a layout
+   bug.
+3. Replaced the chip list entirely with a date picker -
+   `YouVersionVotdClient.getDay` addresses a day by ordinal (1-366,
+   day-of-year), but nobody actually thinks in day-of-year; a calendar
+   date, converted to day-of-year locally
+   (`date.difference(DateTime(date.year)).inDays + 1`), is both the more
+   recognizable UI for "verse of the day" and never renders more than one
+   control. `listAll` (previously called just to build the chip list) is
+   no longer used by this page at all - `getDay` alone is enough.
+   Tried `CupertinoDatePicker` (a scrolling wheel, in a bottom sheet)
+   over `showDatePicker`'s calendar grid - works on every platform (not
+   gated by OS), user preferred it initially.
+4. **Mobile only**, in the end - confirmed live on Linux desktop, the
+   wheel picker (`ListWheelScrollView` under the hood) has two real
+   Flutter-level papercuts with a physical mouse: each wheel notch jumps
+   several items (a mouse's scroll delta per notch is much larger than
+   what the widget expects, and it isn't scaled down), and click-and-drag
+   doesn't scroll it at all (Flutter's default `ScrollBehavior` only
+   enables drag-to-scroll for touch/stylus pointers, not mouse). Neither
+   is specific to this app or fixable without patching Flutter's own
+   scroll behavior/physics - `isDesktopPlatform` (`_isDesktop`, extracted
+   here from `sign_in_page.dart` into a shared `platform_check.dart`
+   since two files needed it) now picks `showDatePicker`'s calendar grid
+   on desktop (plain taps/clicks, no wheel/drag needed) and keeps the
+   Cupertino wheel for mobile, where touch-scrolling one works fine.
+
+Not confirmed whether `getDay` resolves across a year boundary (e.g. day
+366 of a leap year vs. day 1 of the next) - both pickers' `minimumDate`/
+`maximumDate`/`firstDate`/`lastDate` are clamped to the currently-selected
+year rather than assuming either way.
+
 ## Where to log future changes
 
 - **`packages/youversion_platform_core/CHANGELOG.md`**: what changed, per

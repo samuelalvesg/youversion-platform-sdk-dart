@@ -49,5 +49,8 @@
   "fontSettingsTooltip": "Configurações de fonte",
   "bookSectionLabel": "Livro",
   "chapterSectionLabel": "Capítulo",
-  "verseSectionLabel": "Versículo"
+  "verseSectionLabel": "Versículo",
+  "waitingForBrowserMessage": "Aguardando o navegador...",
+  "autoSignInButton": "Entrar (abre o navegador automaticamente)",
+  "pickDateButton": "Escolher data"
 }

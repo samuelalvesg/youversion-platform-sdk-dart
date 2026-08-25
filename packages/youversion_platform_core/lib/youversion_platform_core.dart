@@ -30,6 +30,7 @@ export 'src/organizations/api/youversion_organizations_client.dart';
 export 'src/organizations/models/organization.dart';
 export 'src/sign_in/api/youversion_sign_in.dart';
 export 'src/sign_in/models/permission.dart';
+export 'src/sign_in/oauth_loopback_server_stub.dart' if (dart.library.io) 'src/sign_in/oauth_loopback_server.dart';
 export 'src/sign_in/models/youversion_identity.dart';
 export 'src/sign_in/models/youversion_token.dart';
 export 'src/sign_in/pkce.dart';

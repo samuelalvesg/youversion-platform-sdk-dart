@@ -190,4 +190,13 @@ class ExampleLocalizationsEn extends ExampleLocalizations {
 
   @override
   String get verseSectionLabel => 'Verse';
+
+  @override
+  String get waitingForBrowserMessage => 'Waiting for the browser...';
+
+  @override
+  String get autoSignInButton => 'Sign in (opens browser automatically)';
+
+  @override
+  String get pickDateButton => 'Pick a date';
 }

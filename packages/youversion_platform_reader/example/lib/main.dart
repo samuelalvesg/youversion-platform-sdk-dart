@@ -28,10 +28,13 @@ import 'votd_page.dart';
 // placeholder for anyone who just opens this file to read it.
 const _appKey = String.fromEnvironment('APP_KEY', defaultValue: 'YOUR_APP_KEY');
 
-// The App Key's real registered redirect URI - another app's (Symmetris)
-// production backend, unrelated to this SDK. See `SignInPage`'s doc
-// comment for why this example uses it anyway without ever calling it.
-final _redirectUri = Uri.parse('https://api.symmetris.com.br/api/oauth/youversion/callback');
+// This App Key's one registered redirect_uri - confirmed live, pointing
+// `/auth/authorize` at a second, unregistered `redirect_uri` silently
+// fell back to whichever one *is* registered instead of erroring, so
+// there's no separate "desktop-only" redirect_uri here, just this one
+// (a loopback address, RFC 8252 §7.3 - see `SignInPage`'s doc comment for
+// the two different flows built around it depending on platform).
+final _redirectUri = Uri.parse('http://127.0.0.1:8952/callback');
 
 void main() => runApp(const ExampleApp());
 

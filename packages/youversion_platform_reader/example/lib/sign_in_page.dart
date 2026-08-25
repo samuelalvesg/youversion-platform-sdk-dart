@@ -5,28 +5,41 @@ import 'package:youversion_platform_ui/youversion_platform_ui.dart';
 
 import 'auth_session.dart';
 import 'l10n/example_localizations.dart';
+import 'platform_check.dart';
 
 /// Demonstrates `YouVersionSignIn`'s full Authorization Code + PKCE flow,
 /// plus the sign-in-related `_ui` widgets (`SignInPromptSheet`,
 /// `SignInErrorDialog`, `SignOutConfirmationDialog`, `YouVersionSignInButton`).
 ///
-/// **Demo-only redirect handling**: this app has no deep link/App Link of
-/// its own, so it can't automatically capture the OAuth redirect. It uses
-/// the App Key's real registered `redirectUri`
-/// (`https://api.symmetris.com.br/api/oauth/youversion/callback` - another
-/// app's production backend, unrelated to this SDK) purely so
-/// `/auth/authorize` accepts the request; after the browser redirects
-/// there, the user copies the resulting URL straight out of the address
-/// bar (the `code`/`state` are plain query params, visible whether or not
-/// that page actually loads) and pastes it back into this app. This
-/// example never calls that backend - it only ever reads the URL string
-/// the browser itself shows. A real app would register its own
-/// deep link/App Link and skip this paste step entirely.
+/// Two sign-in flows against the same `widget.signIn` (one `redirectUri`,
+/// this App Key only has the one registered - confirmed live, pointing it
+/// at a second, unregistered URI silently fell back to whatever *is*
+/// registered instead of erroring, so there's no "register a second one
+/// just for desktop" option here):
 ///
-/// **The pasted URL may not have a `code` yet** - confirmed live, some App
-/// Key configurations land here with only `state`/`granted_permissions`
-/// first. `_submitCallbackUrl` calls `YouVersionSignIn.resolveCallback` in
-/// that case before parsing `code` - see its doc comment.
+/// **Desktop (Linux/macOS/Windows): automatic, via `OAuthLoopbackServer`**
+/// (`_core`) - a real, no-copy-paste flow, *if* `widget.signIn.redirectUri`
+/// is itself a loopback address (`http://127.0.0.1:<port>/<path>`, RFC
+/// 8252 §7.3 - the desktop equivalent of a custom-scheme deep link, which
+/// the OS never registers for a desktop build the way it does on
+/// Android/iOS). `_startDesktopSignIn` starts an `OAuthLoopbackServer` on
+/// exactly that port/path.
+///
+/// **Everywhere else (or if `redirectUri` isn't a loopback address):
+/// paste-the-callback-URL** - this app has no deep link/App Link of its
+/// own on mobile/web, so it can't automatically capture the OAuth
+/// redirect there. The user copies the resulting URL straight out of the
+/// browser's address bar (the `code`/`state` are plain query params,
+/// visible whether or not that page actually loads - if `redirectUri`
+/// isn't a real running server, it won't load, that's expected) and
+/// pastes it back into this app. A real mobile/web app would register
+/// its own deep link/App Link and skip this paste step entirely.
+///
+/// **The redirect may not have a `code` yet** (either flow) - confirmed
+/// live, some App Key configurations land here with only `state`/
+/// `granted_permissions` first. Both `_submitCallbackUrl` and
+/// `_startDesktopSignIn` call `YouVersionSignIn.resolveCallback` in that
+/// case before parsing `code` - see its doc comment.
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key, required this.signIn, required this.session});
 
@@ -37,9 +50,72 @@ class SignInPage extends StatefulWidget {
   State<SignInPage> createState() => _SignInPageState();
 }
 
+/// Whether [redirectUri] is actually a loopback address - guards the
+/// desktop auto-sign-in button from showing (and `OAuthLoopbackServer`
+/// from trying to bind an unrelated port, e.g. `443` for an `https://`
+/// URL) if this App Key's registered `redirectUri` ever changes back to
+/// something else.
+bool _isLoopbackUri(Uri redirectUri) =>
+    redirectUri.scheme == 'http' && (redirectUri.host == '127.0.0.1' || redirectUri.host == 'localhost');
+
 class _SignInPageState extends State<SignInPage> {
   PkceAuthorizationRequest? _pendingRequest;
   bool _isExchanging = false;
+  bool _isAutoSigningIn = false;
+
+  // Automatic sign-in via a temporary local HTTP server catching the
+  // OAuth redirect (RFC 8252 §7.3 loopback interface redirection) -
+  // desktop-only (`OAuthLoopbackServer`, `_core`, needs `dart:io`). Uses
+  // `widget.signIn` directly - this App Key only has one registered
+  // redirect_uri (confirmed live: pointing at a second, unregistered one
+  // silently fell back to whichever *is* registered instead of erroring),
+  // so it has to be the loopback address itself for this to work, and the
+  // port/path below come from parsing it rather than a separate constant
+  // - one source of truth for what's actually registered.
+  Future<void> _startDesktopSignIn() async {
+    final redirectUri = widget.signIn.redirectUri;
+    final request = widget.signIn.buildAuthorizationUrl(
+      permissions: const {YouVersionPermission.profile, YouVersionPermission.email, YouVersionPermission.highlights},
+    );
+
+    final OAuthLoopbackServer server;
+    try {
+      server = await OAuthLoopbackServer.start(port: redirectUri.port, path: redirectUri.path);
+    } catch (error) {
+      await _showError('$error', onRetry: _startDesktopSignIn);
+      return;
+    }
+
+    setState(() => _isAutoSigningIn = true);
+    try {
+      await launchUrl(request.authorizationUrl, mode: LaunchMode.externalApplication);
+      var uri = await server.waitForCallback();
+      if (!uri.queryParameters.containsKey('code')) {
+        uri = await widget.signIn.resolveCallback(uri);
+      }
+      final code = uri.queryParameters['code'];
+      if (code == null) {
+        if (mounted) await _showError(ExampleLocalizations.of(context).noCodeError, onRetry: _startDesktopSignIn);
+        return;
+      }
+
+      final token = await widget.signIn.exchangeCode(
+        code: code,
+        codeVerifier: request.codeVerifier,
+        receivedState: uri.queryParameters['state'],
+        expectedState: request.state,
+        expectedNonce: request.nonce,
+        grantedPermissions: YouVersionSignIn.parseGrantedPermissions(uri),
+      );
+      await widget.session.signIn(token);
+    } on YouVersionException catch (e) {
+      await _showError(e.message, onRetry: _startDesktopSignIn);
+    } catch (error) {
+      await _showError('$error', onRetry: _startDesktopSignIn);
+    } finally {
+      if (mounted) setState(() => _isAutoSigningIn = false);
+    }
+  }
 
   Future<void> _startSignIn() async {
     final strings = ExampleLocalizations.of(context);
@@ -107,11 +183,11 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  Future<void> _showError(String message) async {
+  Future<void> _showError(String message, {VoidCallback? onRetry}) async {
     if (!mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => SignInErrorDialog(message: message, onRetry: _launchAuthorization),
+      builder: (_) => SignInErrorDialog(message: message, onRetry: onRetry ?? _launchAuthorization),
     );
   }
 
@@ -137,11 +213,35 @@ class _SignInPageState extends State<SignInPage> {
           padding: const EdgeInsets.all(16),
           child: identity != null
               ? _ProfileCard(identity: identity, onSignOut: _confirmSignOut)
-              : _pendingRequest != null
-                  ? _PasteCallbackForm(isSubmitting: _isExchanging, onSubmit: _submitCallbackUrl)
-                  : Center(
-                      child: YouVersionSignInButton(onPressed: _startSignIn),
-                    ),
+              : _isAutoSigningIn
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 12),
+                          Text(ExampleLocalizations.of(context).waitingForBrowserMessage),
+                        ],
+                      ),
+                    )
+                  : _pendingRequest != null
+                      ? _PasteCallbackForm(isSubmitting: _isExchanging, onSubmit: _submitCallbackUrl)
+                      // Only one button, not both stacked side by side -
+                      // confirmed live, having the automatic and
+                      // paste-flow buttons together just meant the wrong
+                      // one got tapped by mistake. The automatic flow is
+                      // strictly better whenever it's available (no copy-
+                      // paste at all); paste-flow is only ever the
+                      // fallback for when it isn't (mobile/web, or a
+                      // `redirectUri` that isn't a loopback address).
+                      : Center(
+                          child: (isDesktopPlatform && _isLoopbackUri(widget.signIn.redirectUri))
+                              ? FilledButton(
+                                  onPressed: _startDesktopSignIn,
+                                  child: Text(ExampleLocalizations.of(context).autoSignInButton),
+                                )
+                              : YouVersionSignInButton(onPressed: _startSignIn),
+                        ),
         );
       },
     );

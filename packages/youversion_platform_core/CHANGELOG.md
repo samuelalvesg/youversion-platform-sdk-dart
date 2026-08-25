@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Added `OAuthLoopbackServer` - a temporary local HTTP server for the
+  RFC 8252 §7.3 loopback-interface desktop sign-in flow (open the system
+  browser, catch the redirect on `http://127.0.0.1:<port>`, no
+  custom-scheme deep link needed). `dart:io`-based, conditionally
+  exported (a web stub stands in when `dart:io` isn't available, so
+  depending on this package still compiles for Flutter Web). See
+  `docs/DECISIONS.md`.
+
 - Added `YouVersionErrorReason.rateLimited` (`429`), applied universally
   across every client ahead of any endpoint-specific `reasonForStatus` -
   see `docs/DECISIONS.md`.

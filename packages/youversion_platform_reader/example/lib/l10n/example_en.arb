@@ -82,5 +82,8 @@
   "fontSettingsTooltip": "Font settings",
   "bookSectionLabel": "Book",
   "chapterSectionLabel": "Chapter",
-  "verseSectionLabel": "Verse"
+  "verseSectionLabel": "Verse",
+  "waitingForBrowserMessage": "Waiting for the browser...",
+  "autoSignInButton": "Sign in (opens browser automatically)",
+  "pickDateButton": "Pick a date"
 }

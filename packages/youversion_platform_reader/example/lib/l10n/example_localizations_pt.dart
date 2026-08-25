@@ -190,4 +190,13 @@ class ExampleLocalizationsPt extends ExampleLocalizations {
 
   @override
   String get verseSectionLabel => 'Versículo';
+
+  @override
+  String get waitingForBrowserMessage => 'Aguardando o navegador...';
+
+  @override
+  String get autoSignInButton => 'Entrar (abre o navegador automaticamente)';
+
+  @override
+  String get pickDateButton => 'Escolher data';
 }

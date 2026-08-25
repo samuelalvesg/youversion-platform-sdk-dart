@@ -398,6 +398,24 @@ abstract class ExampleLocalizations {
   /// In en, this message translates to:
   /// **'Verse'**
   String get verseSectionLabel;
+
+  /// No description provided for @waitingForBrowserMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the browser...'**
+  String get waitingForBrowserMessage;
+
+  /// No description provided for @autoSignInButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in (opens browser automatically)'**
+  String get autoSignInButton;
+
+  /// No description provided for @pickDateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date'**
+  String get pickDateButton;
 }
 
 class _ExampleLocalizationsDelegate
