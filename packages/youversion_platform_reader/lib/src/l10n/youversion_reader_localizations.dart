@@ -255,6 +255,12 @@ abstract class YouVersionReaderLocalizations {
   /// **'Forest Night'**
   String get themeForestNight;
 
+  /// No description provided for @bionicReadingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bionic Reading'**
+  String get bionicReadingLabel;
+
   /// No description provided for @changeVersionTooltip.
   ///
   /// In en, this message translates to:

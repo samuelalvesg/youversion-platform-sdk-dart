@@ -455,6 +455,7 @@ class _BibleReaderState extends State<BibleReader> {
                     selectedVerseIds: {if (_controller.selectedVerseId != null) _controller.selectedVerseId!},
                     highlightsByVerseId: _controller.verseHighlights,
                     isRightToLeft: _controller.bible.isRightToLeft,
+                    bionicReading: _controller.fontSettings.bionicReading,
                     onVerseTap: _onVerseTapped,
                     onFootnoteTap: _openFootnote,
                   ),

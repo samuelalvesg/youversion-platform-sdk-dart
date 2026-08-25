@@ -75,6 +75,9 @@ class YouVersionReaderLocalizationsZh extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
+  String get bionicReadingLabel => 'Bionic Reading';
+
+  @override
   String get changeVersionTooltip => '更改聖經譯本';
 
   @override

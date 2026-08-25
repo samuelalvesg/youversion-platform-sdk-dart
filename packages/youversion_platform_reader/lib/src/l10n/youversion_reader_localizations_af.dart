@@ -75,6 +75,9 @@ class YouVersionReaderLocalizationsAf extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
+  String get bionicReadingLabel => 'Bionic Reading';
+
+  @override
   String get changeVersionTooltip => 'Verander Bybelweergawe';
 
   @override

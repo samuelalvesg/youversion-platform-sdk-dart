@@ -36,6 +36,7 @@ class BibleTextView extends StatefulWidget {
     this.selectedVerseIds = const {},
     this.highlightsByVerseId = const {},
     this.isRightToLeft = false,
+    this.bionicReading = false,
     this.onVerseTap,
     this.onVerseLongPress,
     this.onFootnoteTap,
@@ -73,6 +74,14 @@ class BibleTextView extends StatefulWidget {
   /// [Directionality] (this widget's own text layout only; chapter
   /// navigation icon mirroring is handled separately by `BibleReader`).
   final bool isRightToLeft;
+
+  /// Bionic Reading - bolds roughly the first half of each word's letters
+  /// (a fixation point meant to speed up reading/help focus, not in any
+  /// of the 3 official SDKs). Splits each text run into per-word bold/
+  /// regular span pairs instead of one plain [TextSpan] - verse numbers
+  /// and footnote markers are untouched either way, only actual scripture
+  /// words are affected.
+  final bool bionicReading;
 
   /// Called with a verse's full USFM id when it's tapped. `null` disables
   /// tap-to-select (verses render as plain, non-interactive text unless
@@ -253,6 +262,12 @@ class _BibleTextViewState extends State<BibleTextView> {
             style: baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 15) * 0.8),
             recognizer: _footnoteRecognizerFor(run.footnoteText!),
           )
+        else if (widget.bionicReading)
+          ..._bionicSpans(
+            run.text,
+            run.isWordsOfChrist ? baseStyle.copyWith(color: readerColors.wordsOfChrist) : baseStyle,
+            recognizer,
+          )
         else
           TextSpan(
             text: run.text,
@@ -262,5 +277,32 @@ class _BibleTextViewState extends State<BibleTextView> {
     ];
 
     return TextSpan(children: spans);
+  }
+
+  /// Splits [text] into alternating bold-prefix/regular-suffix
+  /// [TextSpan]s per word (whitespace runs pass through unstyled-bold, as
+  /// their own span, so exact spacing/line-wrapping is untouched). Bold
+  /// length is `ceil(word.length / 2)`, clamped to at least 1 for any
+  /// non-empty word - a fixed, simple heuristic (not the more elaborate
+  /// syllable-aware ones some Bionic Reading implementations use), same
+  /// spirit as most reader-app implementations of this feature. The same
+  /// [recognizer] is reused across every span for a given run - safe,
+  /// [GestureRecognizer] isn't tied 1:1 to a single [InlineSpan].
+  static List<InlineSpan> _bionicSpans(String text, TextStyle baseStyle, GestureRecognizer? recognizer) {
+    final boldStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
+    final spans = <InlineSpan>[];
+    for (final match in RegExp(r'\s+|\S+').allMatches(text)) {
+      final token = match.group(0)!;
+      if (token.trim().isEmpty) {
+        spans.add(TextSpan(text: token, style: baseStyle, recognizer: recognizer));
+        continue;
+      }
+      final boldLength = (token.length / 2).ceil().clamp(1, token.length);
+      spans.add(TextSpan(text: token.substring(0, boldLength), style: boldStyle, recognizer: recognizer));
+      if (boldLength < token.length) {
+        spans.add(TextSpan(text: token.substring(boldLength), style: baseStyle, recognizer: recognizer));
+      }
+    }
+    return spans;
   }
 }

@@ -75,6 +75,9 @@ class YouVersionReaderLocalizationsTr extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
+  String get bionicReadingLabel => 'Bionic Reading';
+
+  @override
   String get changeVersionTooltip => 'Kutsal Kitap çeviri versiyonunu değiştir';
 
   @override

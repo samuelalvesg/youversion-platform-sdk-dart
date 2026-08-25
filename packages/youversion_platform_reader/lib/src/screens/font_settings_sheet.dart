@@ -115,11 +115,18 @@ class _FontSettingsSheetState extends State<FontSettingsSheet> {
               children: [
                 for (final height in ReaderFontSettings.availableLineHeights)
                   ChoiceChip(
-                    label: Text(height.toStringAsFixed(1)),
+                    label: Text(height.toStringAsFixed(2)),
                     selected: settings.lineHeight == height,
                     onSelected: (_) => _update(settings.copyWith(lineHeight: height)),
                   ),
               ],
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.bionicReadingLabel),
+              value: settings.bionicReading,
+              onChanged: (value) => _update(settings.copyWith(bionicReading: value)),
             ),
           ],
         ),

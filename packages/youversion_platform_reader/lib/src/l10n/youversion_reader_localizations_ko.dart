@@ -75,6 +75,9 @@ class YouVersionReaderLocalizationsKo extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
+  String get bionicReadingLabel => 'Bionic Reading';
+
+  @override
   String get changeVersionTooltip => '번역본 변경';
 
   @override

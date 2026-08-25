@@ -75,6 +75,9 @@ class YouVersionReaderLocalizationsCy extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
+  String get bionicReadingLabel => 'Bionic Reading';
+
+  @override
   String get changeVersionTooltip => 'Newid fersiwn y Beibl';
 
   @override

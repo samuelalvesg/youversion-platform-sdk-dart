@@ -17,6 +17,7 @@ class ReaderFontSettings {
     this.lineHeight = 1.5,
     this.fontFamily,
     this.theme = ReaderTheme.pureWhite,
+    this.bionicReading = false,
   });
 
   static const List<double> availableFontSizes = [9, 10, 12, 14, 15, 16, 18, 20, 21, 24, 28, 32];
@@ -26,6 +27,14 @@ class ReaderFontSettings {
   final double lineHeight;
   final String? fontFamily;
   final ReaderTheme theme;
+
+  /// Bionic Reading - bolds roughly the first half of each word's letters
+  /// to give the eye a fixation point, a real accessibility/reading-speed
+  /// aid (not in any of the 3 official SDKs, same kind of intentional
+  /// extension as the extra [ReaderTheme] presets). [BibleTextView] does
+  /// the actual per-word span splitting; this field is just the saved
+  /// on/off preference.
+  final bool bionicReading;
 
   /// The next-smaller preset in [availableFontSizes], or [fontSize]
   /// unchanged if already at the smallest - no wraparound. Mirrors
@@ -48,12 +57,14 @@ class ReaderFontSettings {
     double? lineHeight,
     String? fontFamily,
     ReaderTheme? theme,
+    bool? bionicReading,
   }) {
     return ReaderFontSettings(
       fontSize: fontSize ?? this.fontSize,
       lineHeight: lineHeight ?? this.lineHeight,
       fontFamily: fontFamily ?? this.fontFamily,
       theme: theme ?? this.theme,
+      bionicReading: bionicReading ?? this.bionicReading,
     );
   }
 
@@ -62,6 +73,7 @@ class ReaderFontSettings {
         'line_height': lineHeight,
         'font_family': fontFamily,
         'theme': theme.name,
+        'bionic_reading': bionicReading,
       };
 
   factory ReaderFontSettings.fromJson(Map<String, dynamic> json) {
@@ -70,6 +82,7 @@ class ReaderFontSettings {
       lineHeight: (json['line_height'] as num?)?.toDouble() ?? 1.5,
       fontFamily: json['font_family'] as String?,
       theme: ReaderTheme.fromName(json['theme'] as String?),
+      bionicReading: json['bionic_reading'] as bool? ?? false,
     );
   }
 }
