@@ -334,7 +334,19 @@ class YouVersionHighlightsSyncEngine {
         _serverBackedPassageIds.add(passageKey);
       }
     } else {
-      await _client.deleteHighlight(userAccessToken: token, bibleId: op.bibleId, passageId: op.passageId);
+      try {
+        await _client.deleteHighlight(userAccessToken: token, bibleId: op.bibleId, passageId: op.passageId);
+      } on YouVersionException catch (e) {
+        // Already gone server-side (deleted from another device, or an
+        // earlier attempt of this same operation actually succeeded
+        // before a retry got triggered) - that IS the successful end
+        // state for a delete, not a failure to retry forever. Confirmed
+        // live: `deleteHighlight`'s `_reasonForWrite` maps a 404 to
+        // `YouVersionErrorReason.cannotDownload` (nothing 404-specific
+        // in the reason taxonomy), so this checks `statusCode` directly
+        // rather than `reason`.
+        if (e.statusCode != 404) rethrow;
+      }
       _serverBackedPassageIds.remove(passageKey);
     }
   }

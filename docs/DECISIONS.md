@@ -1465,6 +1465,22 @@ just not improved yet). `bible_explorer_page.dart` (this repo's example
 app, and the sibling `bible_with_me` app) also has its own
 near-duplicate apply/remove logic, untouched.
 
+## 2026-08-25 (cont.): `YouVersionHighlightsSyncEngine` - 404-on-delete no longer retries forever
+
+Gap flagged in the sibling `bible_with_me` app's own `BACKLOG.md`
+(found comparing this engine against Symmetris' `SyncWorkerService`,
+which has the same pattern already) - registered there, not fixed at
+the time, per explicit instruction to register-only. Now implemented:
+`_send`'s delete branch (`op.color == null`) catches
+`YouVersionException` and swallows it specifically when
+`statusCode == 404` (`YouVersionHighlightsClient.deleteHighlight`'s
+`_reasonForWrite` maps a 404 to the generic `cannotDownload` reason,
+not anything 404-specific - checking `statusCode` directly is the only
+way to distinguish it). A 404 on delete means the highlight is already
+gone server-side - the delete's goal state is already achieved, so this
+is a success, not a failure to back off and retry. Any other exception
+still rethrows into `_processQueue`'s normal retry path unchanged.
+
 ## Where to log future changes
 
 - **`packages/youversion_platform_core/CHANGELOG.md`**: what changed, per

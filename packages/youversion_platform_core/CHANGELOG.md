@@ -1,5 +1,13 @@
 ## Unreleased
 
+- `YouVersionHighlightsSyncEngine`: a `404` on `deleteHighlight` (the
+  highlight was already removed server-side - another device, or an
+  earlier attempt of the same retry actually landed) now counts as a
+  successful removal instead of being retried with backoff forever.
+  Previously fell into the same generic-failure path as any other
+  non-`403` error, so a delete against an already-gone highlight could
+  never "succeed" and retried indefinitely.
+
 - Added `YouVersionHighlightsSyncEngine` - an in-memory, offline-aware
   sync layer on top of `YouVersionHighlightsClient`: optimistic local
   writes, a retry queue with exponential backoff (`1s, 2s, 4s, 8s, 16s,

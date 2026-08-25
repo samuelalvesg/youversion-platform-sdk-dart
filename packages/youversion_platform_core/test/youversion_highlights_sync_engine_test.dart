@@ -218,5 +218,40 @@ void main() {
 
       engine.close();
     });
+
+    test('a 404 on delete counts as success, not a failure to retry', () async {
+      var deleteCount = 0;
+      final mockClient = MockClient((request) async {
+        if (request.method == 'DELETE') {
+          deleteCount++;
+          return http.Response('not found', 404);
+        }
+        return http.Response(
+          jsonEncode({'data': _highlightJson(bibleId: 111, passageId: 'JHN.3.16', color: 'fffe00')}),
+          201,
+        );
+      });
+
+      final engine = YouVersionHighlightsSyncEngine(
+        client: YouVersionHighlightsClient(appKey: 'my-app-key', httpClient: YouVersionHttpClient(client: mockClient)),
+        accessToken: () => 'access-1',
+        backoff: (_) => const Duration(milliseconds: 5),
+      );
+
+      // Already-server-backed, so `removeHighlight` actually calls DELETE
+      // (not just clearing an optimistic local-only entry).
+      engine.setHighlight(bibleId: 111, chapterId: 'JHN.3', passageId: 'JHN.3.16', color: 'fffe00');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      engine.removeHighlight(bibleId: 111, chapterId: 'JHN.3', passageId: 'JHN.3.16');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(deleteCount, 1); // not retried
+      expect(engine.pendingOperationCount, 0);
+      expect(engine.failedOperationCount, 0);
+      expect(engine.highlightsForChapter(bibleId: 111, chapterId: 'JHN.3'), isEmpty);
+
+      engine.close();
+    });
   });
 }
