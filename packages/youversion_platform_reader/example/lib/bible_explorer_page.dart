@@ -796,6 +796,31 @@ class _BibleExplorerPageState extends State<BibleExplorerPage> {
               if (_chapterPassageError != null)
                 ErrorRetry(error: _chapterPassageError!, onRetry: () => _openChapterPassage(_flashVerseId))
               else if (_chapterPassage != null) ...[
+                // `_openChapterPassage` skips the highlights request
+                // entirely while signed out (`widget.userAccessToken ==
+                // null`) - that's correct (no token to call the API
+                // with), but silently rendering zero highlights read as
+                // "highlights are broken" (real bug, found downstream in
+                // `bible_with_me`, 2026-09-03) with no way to tell "you
+                // have none" apart from "you're signed out".
+                if (widget.userAccessToken == null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(strings.signInToSyncMessage)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 _ChapterNavButton(
                   chapter: _chapterAtOffset(-1),
                   label: strings.previousChapterButton,

@@ -81,6 +81,10 @@ class ExampleLocalizationsEn extends ExampleLocalizations {
       'Sign in from the \"Sign In\" section to sync highlights.';
 
   @override
+  String get sessionExpiredMessage =>
+      'Your session expired - sign in again to sync highlights.';
+
+  @override
   String get filterByCountryTitle => 'Filter by country?';
 
   @override

@@ -225,6 +225,12 @@ abstract class ExampleLocalizations {
   /// **'Sign in from the \"Sign In\" section to sync highlights.'**
   String get signInToSyncMessage;
 
+  /// No description provided for @sessionExpiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired - sign in again to sync highlights.'**
+  String get sessionExpiredMessage;
+
   /// No description provided for @filterByCountryTitle.
   ///
   /// In en, this message translates to:

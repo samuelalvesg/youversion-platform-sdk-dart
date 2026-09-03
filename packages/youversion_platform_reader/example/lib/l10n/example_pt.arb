@@ -21,6 +21,7 @@
   "pasteCallbackInstructions": "Uma janela do navegador abriu. Depois de terminar o login, ela redireciona pra uma página que este exemplo não controla - cole a URL resultante da barra de endereço do navegador abaixo (a página em si pode falhar ao carregar, isso é esperado; o \"code\" está na URL de qualquer forma).",
   "completeSignInButton": "Concluir login",
   "signInToSyncMessage": "Entre na seção \"Entrar\" pra sincronizar marcações.",
+  "sessionExpiredMessage": "Sua sessão expirou - entre de novo pra sincronizar marcações.",
   "filterByCountryTitle": "Filtrar por país?",
   "endOfListLabel": "Fim da lista",
   "loadMoreButton": "Carregar mais",

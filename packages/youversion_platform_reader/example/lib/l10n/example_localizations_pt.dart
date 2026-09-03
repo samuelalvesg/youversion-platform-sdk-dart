@@ -81,6 +81,10 @@ class ExampleLocalizationsPt extends ExampleLocalizations {
       'Entre na seção \"Entrar\" pra sincronizar marcações.';
 
   @override
+  String get sessionExpiredMessage =>
+      'Sua sessão expirou - entre de novo pra sincronizar marcações.';
+
+  @override
   String get filterByCountryTitle => 'Filtrar por país?';
 
   @override

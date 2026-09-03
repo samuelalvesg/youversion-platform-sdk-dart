@@ -27,6 +27,7 @@
   "pasteCallbackInstructions": "A browser window opened. After you finish signing in, it redirects to a page this example doesn't control - paste the resulting URL from your browser's address bar below (the page itself may fail to load, that's expected; the \"code\" is in the URL either way).",
   "completeSignInButton": "Complete sign-in",
   "signInToSyncMessage": "Sign in from the \"Sign In\" section to sync highlights.",
+  "sessionExpiredMessage": "Your session expired - sign in again to sync highlights.",
   "filterByCountryTitle": "Filter by country?",
   "endOfListLabel": "End of list",
   "loadMoreButton": "Load more",

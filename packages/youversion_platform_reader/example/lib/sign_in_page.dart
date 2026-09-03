@@ -209,39 +209,61 @@ class _SignInPageState extends State<SignInPage> {
       animation: widget.session,
       builder: (context, _) {
         final identity = widget.session.identity;
+        final strings = ExampleLocalizations.of(context);
         return Padding(
           padding: const EdgeInsets.all(16),
-          child: identity != null
-              ? _ProfileCard(identity: identity, onSignOut: _confirmSignOut)
-              : _isAutoSigningIn
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 12),
-                          Text(ExampleLocalizations.of(context).waitingForBrowserMessage),
-                        ],
-                      ),
-                    )
-                  : _pendingRequest != null
-                      ? _PasteCallbackForm(isSubmitting: _isExchanging, onSubmit: _submitCallbackUrl)
-                      // Only one button, not both stacked side by side -
-                      // confirmed live, having the automatic and
-                      // paste-flow buttons together just meant the wrong
-                      // one got tapped by mistake. The automatic flow is
-                      // strictly better whenever it's available (no copy-
-                      // paste at all); paste-flow is only ever the
-                      // fallback for when it isn't (mobile/web, or a
-                      // `redirectUri` that isn't a loopback address).
-                      : Center(
-                          child: (isDesktopPlatform && _isLoopbackUri(widget.signIn.redirectUri))
-                              ? FilledButton(
-                                  onPressed: _startDesktopSignIn,
-                                  child: Text(ExampleLocalizations.of(context).autoSignInButton),
-                                )
-                              : YouVersionSignInButton(onPressed: _startSignIn),
-                        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Surfaces `AuthSession.sessionExpired` (see its own doc
+              // comment) - the one case where a sign-out isn't the user's
+              // own action, so it gets an explanation instead of just
+              // landing on the same silent login screen.
+              if (widget.session.sessionExpired)
+                MaterialBanner(
+                  content: Text(strings.sessionExpiredMessage),
+                  leading: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.error),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: strings.clearTooltip,
+                      onPressed: widget.session.clearSignOutReason,
+                    ),
+                  ],
+                ),
+              identity != null
+                  ? _ProfileCard(identity: identity, onSignOut: _confirmSignOut)
+                  : _isAutoSigningIn
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 12),
+                              Text(ExampleLocalizations.of(context).waitingForBrowserMessage),
+                            ],
+                          ),
+                        )
+                      : _pendingRequest != null
+                          ? _PasteCallbackForm(isSubmitting: _isExchanging, onSubmit: _submitCallbackUrl)
+                          // Only one button, not both stacked side by side -
+                          // confirmed live, having the automatic and
+                          // paste-flow buttons together just meant the wrong
+                          // one got tapped by mistake. The automatic flow is
+                          // strictly better whenever it's available (no copy-
+                          // paste at all); paste-flow is only ever the
+                          // fallback for when it isn't (mobile/web, or a
+                          // `redirectUri` that isn't a loopback address).
+                          : Center(
+                              child: (isDesktopPlatform && _isLoopbackUri(widget.signIn.redirectUri))
+                                  ? FilledButton(
+                                      onPressed: _startDesktopSignIn,
+                                      child: Text(ExampleLocalizations.of(context).autoSignInButton),
+                                    )
+                                  : YouVersionSignInButton(onPressed: _startSignIn),
+                            ),
+            ],
+          ),
         );
       },
     );

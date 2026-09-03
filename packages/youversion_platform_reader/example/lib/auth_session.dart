@@ -27,9 +27,31 @@ class AuthSession extends ChangeNotifier {
   bool get isSignedIn => _token != null;
   bool get isLoading => _isLoading;
 
+  /// Set right before `restore()` signs out because a saved refresh token
+  /// failed - `null` for every other sign-out (explicit user action, or no
+  /// saved token at all). Lets the UI (`SignInPage`) tell "you got signed
+  /// out because your session expired" apart from "you were never signed
+  /// in" instead of just landing on the same silent login screen either
+  /// way - real bug this fixed (found downstream in an app built on this
+  /// example, `bible_with_me`, 2026-09-03): a stale/invalid refresh token
+  /// cleared the session with zero visible signal, which also made
+  /// `BibleExplorerPage` silently stop showing highlights (its
+  /// `userAccessToken` went `null` at the same time) with nothing tying the
+  /// two symptoms together for the user. Call [clearSignOutReason] once the
+  /// UI has shown it.
+  bool _sessionExpired = false;
+  bool get sessionExpired => _sessionExpired;
+  void clearSignOutReason() {
+    if (!_sessionExpired) return;
+    _sessionExpired = false;
+    notifyListeners();
+  }
+
   /// Tries to restore a session from a previously saved refresh token.
-  /// Silently signs out (no error surfaced) if the refresh fails - the
-  /// user just sees the signed-out state and can sign in again.
+  /// Signs out if the refresh fails - the real error is logged (was
+  /// silently swallowed before) and `sessionExpired` is set so the UI can
+  /// explain why, instead of just showing the signed-out state with no
+  /// context.
   Future<void> restore() async {
     final prefs = await SharedPreferences.getInstance();
     final refreshToken = prefs.getString(_refreshTokenKey);
@@ -52,7 +74,9 @@ class AuthSession extends ChangeNotifier {
         idToken: idToken,
       );
       await _apply(token);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('AuthSession.restore: refresh token failed, signing out: $error\n$stackTrace');
+      _sessionExpired = true;
       await signOut();
     } finally {
       _isLoading = false;
@@ -65,6 +89,7 @@ class AuthSession extends ChangeNotifier {
   Future<void> _apply(YouVersionToken token) async {
     _token = token;
     _identity = token.idToken != null ? _signIn.decodeIdentity(token.idToken!) : _identity;
+    _sessionExpired = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_accessTokenKey, token.accessToken);
     await prefs.setString(_refreshTokenKey, token.refreshToken);
