@@ -9,22 +9,22 @@ class YouVersionReaderLocalizationsPt extends YouVersionReaderLocalizations {
   YouVersionReaderLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
-  String get bibleFallbackTitle => 'Bible';
+  String get bibleFallbackTitle => 'Bíblia';
 
   @override
-  String get fontSettingsTooltip => 'Font settings';
+  String get fontSettingsTooltip => 'Configurações de fonte';
 
   @override
-  String get fontSizeLabel => 'Font size';
+  String get fontSizeLabel => 'Tamanho da fonte';
 
   @override
-  String get lineSpacingLabel => 'Line spacing';
+  String get lineSpacingLabel => 'Espaçamento entre linhas';
 
   @override
   String get searchBooksHint => 'Pesquisar';
 
   @override
-  String get introChipLabel => 'Intro';
+  String get introChipLabel => 'Introdução';
 
   @override
   String get previousChapterTooltip => 'Capítulo anterior';
@@ -39,49 +39,49 @@ class YouVersionReaderLocalizationsPt extends YouVersionReaderLocalizations {
   String get increaseFontSizeTooltip => 'Aumentar tamanho da fonte';
 
   @override
-  String get themeLabel => 'Theme';
+  String get themeLabel => 'Tema';
 
   @override
-  String get themePureWhite => 'Pure White';
+  String get themePureWhite => 'Branco Puro';
 
   @override
-  String get themeSepia => 'Sepia';
+  String get themeSepia => 'Sépia';
 
   @override
-  String get themePaperGray => 'Paper Gray';
+  String get themePaperGray => 'Cinza Papel';
 
   @override
-  String get themeCream => 'Cream';
+  String get themeCream => 'Creme';
 
   @override
-  String get themeMint => 'Mint';
+  String get themeMint => 'Menta';
 
   @override
-  String get themeSkyBlue => 'Sky Blue';
+  String get themeSkyBlue => 'Azul Céu';
 
   @override
-  String get themeCharcoal => 'Charcoal';
+  String get themeCharcoal => 'Carvão';
 
   @override
-  String get themeMidnightBlue => 'Midnight Blue';
+  String get themeMidnightBlue => 'Azul Meia-Noite';
 
   @override
-  String get themeTrueBlack => 'True Black';
+  String get themeTrueBlack => 'Preto Absoluto';
 
   @override
-  String get themeGraphite => 'Graphite';
+  String get themeGraphite => 'Grafite';
 
   @override
-  String get themeForestNight => 'Forest Night';
+  String get themeForestNight => 'Noite na Floresta';
 
   @override
-  String get bionicReadingLabel => 'Bionic Reading';
+  String get bionicReadingLabel => 'Leitura Biônica';
 
   @override
   String get changeVersionTooltip => 'Alterar versão da Bíblia';
 
   @override
-  String get tryAgainButton => 'Try again';
+  String get tryAgainButton => 'Tentar novamente';
 
   @override
   String get rateLimitedError =>

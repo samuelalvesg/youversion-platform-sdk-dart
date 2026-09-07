@@ -15,20 +15,20 @@ class YouVersionUiLocalizationsPt extends YouVersionUiLocalizations {
   String get searchLanguagesHint => 'Pesquisar idiomas';
 
   @override
-  String get searchTranslationsHint => 'Search translations';
+  String get searchTranslationsHint => 'Pesquisar traduções';
 
   @override
-  String get signInFailedTitle => 'Sign-in failed';
+  String get signInFailedTitle => 'Falha ao entrar';
 
   @override
   String get signInFailedMessage =>
-      'Something went wrong while signing in with YouVersion.';
+      'Algo deu errado ao entrar com o YouVersion.';
 
   @override
   String get closeButton => 'Fechar';
 
   @override
-  String get tryAgainButton => 'Try again';
+  String get tryAgainButton => 'Tentar novamente';
 
   @override
   String get clearHighlightTooltip => 'Limpar destaque';
@@ -40,14 +40,14 @@ class YouVersionUiLocalizationsPt extends YouVersionUiLocalizations {
   String get shareButton => 'Compartilhar';
 
   @override
-  String get signOutNoneMessage => 'You can sign back in at any time.';
+  String get signOutNoneMessage => 'Você pode entrar novamente quando quiser.';
 
   @override
   String get signOutUnsyncedMessage =>
       'Alguns dos seus destaques ainda não foram salvos e serão perdidos se você sair. Deseja sair mesmo assim?';
 
   @override
-  String get signOutTitle => 'Sign out?';
+  String get signOutTitle => 'Sair?';
 
   @override
   String get cancelButton => 'Cancelar';
@@ -56,7 +56,7 @@ class YouVersionUiLocalizationsPt extends YouVersionUiLocalizations {
   String get signOutButton => 'Sair';
 
   @override
-  String get notNowButton => 'Not now';
+  String get notNowButton => 'Agora não';
 
   @override
   String signInWithYouVersionLabel(String brandName) {
@@ -64,19 +64,19 @@ class YouVersionUiLocalizationsPt extends YouVersionUiLocalizations {
   }
 
   @override
-  String get highlightColorYellow => 'Yellow highlight';
+  String get highlightColorYellow => 'Destaque amarelo';
 
   @override
-  String get highlightColorGreen => 'Green highlight';
+  String get highlightColorGreen => 'Destaque verde';
 
   @override
-  String get highlightColorCyan => 'Cyan highlight';
+  String get highlightColorCyan => 'Destaque ciano';
 
   @override
-  String get highlightColorOrange => 'Orange highlight';
+  String get highlightColorOrange => 'Destaque laranja';
 
   @override
-  String get highlightColorPink => 'Pink highlight';
+  String get highlightColorPink => 'Destaque rosa';
 
   @override
   String get highlightColorsLabel => 'Cores de destaque';
