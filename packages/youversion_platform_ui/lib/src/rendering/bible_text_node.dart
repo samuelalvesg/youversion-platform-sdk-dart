@@ -79,6 +79,21 @@ class BibleTextRun {
 /// `ms` covered.
 const _headingClasses = {'s1', 's2', 'ms', 'ms1', 'ms2', 'ms3', 'ms4', 'mr', 'sp', 'sr', 'r'};
 
+/// True for any element YouVersion's passage HTML marks as a heading -
+/// primarily via the generic `yv-h` class (confirmed present on every
+/// heading `<div>` observed live regardless of its specific USFM marker,
+/// e.g. both `ms1 yv-h` and `s1 yv-h` - and absent from a real
+/// verse-bearing block like Psalm 23's `d` title, which carries its own
+/// `.yv-v` marker instead), with [_headingClasses] kept as a defensive
+/// fallback for any heading markup that predates/lacks that flag. Using
+/// `yv-h` as the PRIMARY signal (rather than only an enumerated class
+/// list) means a USFM heading marker never seen before this fix
+/// (`d`/`sd1`-`sd4`/`qa`/... - the exact gap `ms1` was until 2026-09-07,
+/// see [_headingClasses]'s own doc comment) is still caught automatically,
+/// instead of leaking into whatever verse happens to be open when the
+/// next as-yet-unlisted class shows up.
+bool _isHeadingElement(dom.Element node) => node.classes.contains('yv-h') || node.classes.any(_headingClasses.contains);
+
 /// USFM poetry-line classes YouVersion's passage HTML uses, mapped to an
 /// indent level. `qc` (centered) and `qs` (selah) don't have a real
 /// centered/selah rendering here - collapsed to level 0, still a line
@@ -128,7 +143,7 @@ List<BibleTextBlock> parseBibleHtml(String html) {
     if (node is! dom.Element) return;
 
     final classes = node.classes;
-    if (classes.any(_headingClasses.contains)) {
+    if (_isHeadingElement(node)) {
       final text = node.text.trim();
       if (text.isNotEmpty) blocks.add(BibleHeadingBlock(text));
       return;
@@ -171,6 +186,32 @@ List<BibleTextBlock> parseBibleHtml(String html) {
   }
 
   for (final child in document.body?.nodes ?? const <dom.Node>[]) {
+    // Fallback for a top-level block whose class is neither a known
+    // heading ([_isHeadingElement]) nor carries its own verse marker,
+    // AND appears before this passage's first verse (`currentVerseNumber`
+    // still empty - nothing to continue yet). Found live 2026-09-07
+    // (Psalm 23, NIV/NVI/KLB): the `d` superscription ("A psalm of
+    // David.") carries NEITHER `yv-h` NOR its own `.yv-v` in these
+    // translations (unlike BDS/French, where the same `d` class DOES
+    // wrap `.yv-v` and is legitimately verse-1 content there) - without
+    // this, it silently became an orphaned ''-numbered block, invisible
+    // to `extractVersePlainText` today but one heading-order change away
+    // from gluing onto a REAL trailing verse the same way `ms1` did.
+    //
+    // Deliberately NOT "no `.yv-v` -> heading" for the general case: a
+    // wide class survey across en/es/ko (`s1`/`ms1`/`sp`/`sr`/`cl`, all
+    // `yv-h`; `q1`-`q4`/`po`/`li1` poetry-or-paragraph continuation
+    // lines) found continuation lines with NO marker of their own are
+    // common and legitimate (e.g. Revelation 1:4's 2nd-3rd `po` lines) -
+    // blindly dropping any marker-less block would silently delete real
+    // verse text, a worse failure than the one being fixed. Restricting
+    // to "before verse 1" is safe because continuation-without-a-marker
+    // only ever makes sense once a verse is already open.
+    if (child is dom.Element && currentVerseNumber.isEmpty && !_isHeadingElement(child) && child.querySelector('.yv-v') == null) {
+      final text = child.text.trim();
+      if (text.isNotEmpty) blocks.add(BibleHeadingBlock(text));
+      continue;
+    }
     walk(child, inWordsOfChrist: false);
   }
 
