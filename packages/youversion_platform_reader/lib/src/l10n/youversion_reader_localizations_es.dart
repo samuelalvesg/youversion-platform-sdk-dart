@@ -75,7 +75,7 @@ class YouVersionReaderLocalizationsEs extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
-  String get bionicReadingLabel => 'Bold word beginnings';
+  String get bionicReadingLabel => 'Init Bold';
 
   @override
   String get bionicBoldFractionLabel => 'Bold intensity';

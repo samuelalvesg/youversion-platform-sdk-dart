@@ -75,7 +75,7 @@ class YouVersionReaderLocalizationsPt extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Noite na Floresta';
 
   @override
-  String get bionicReadingLabel => 'Negritar início das palavras';
+  String get bionicReadingLabel => 'Init Bold';
 
   @override
   String get bionicBoldFractionLabel => 'Intensidade do negrito';

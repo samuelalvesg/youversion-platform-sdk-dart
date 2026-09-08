@@ -258,7 +258,7 @@ abstract class YouVersionReaderLocalizations {
   /// No description provided for @bionicReadingLabel.
   ///
   /// In en, this message translates to:
-  /// **'Bold word beginnings'**
+  /// **'Init Bold'**
   String get bionicReadingLabel;
 
   /// No description provided for @bionicBoldFractionLabel.
