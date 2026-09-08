@@ -145,6 +145,30 @@ class _FontSettingsSheetState extends State<FontSettingsSheet> {
               value: settings.bionicReading,
               onChanged: (value) => _update(settings.copyWith(bionicReading: value)),
             ),
+            // Só ajustável com a opção acima ligada - `Slider.onChanged:
+            // null` já desabilita visualmente sozinho (cinza, sem
+            // interação), não precisa esconder o controle inteiro. Passos
+            // de 5% (20 divisions em 0.15-1.0) - min 15% pra sempre restar
+            // negrito visível, mesmo bem sutil.
+            Opacity(
+              opacity: settings.bionicReading ? 1 : 0.5,
+              child: Row(
+                children: [
+                  Expanded(child: Text(strings.bionicBoldFractionLabel)),
+                  Text('${(settings.bionicBoldFraction * 100).round()}%'),
+                ],
+              ),
+            ),
+            Slider(
+              value: settings.bionicBoldFraction,
+              min: 0.15,
+              max: 1.0,
+              divisions: 17,
+              label: '${(settings.bionicBoldFraction * 100).round()}%',
+              onChanged: settings.bionicReading
+                  ? (value) => _update(settings.copyWith(bionicBoldFraction: value))
+                  : null,
+            ),
           ],
         ),
       ),

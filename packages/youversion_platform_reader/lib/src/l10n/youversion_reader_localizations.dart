@@ -258,8 +258,14 @@ abstract class YouVersionReaderLocalizations {
   /// No description provided for @bionicReadingLabel.
   ///
   /// In en, this message translates to:
-  /// **'Bionic Reading'**
+  /// **'Bold word beginnings'**
   String get bionicReadingLabel;
+
+  /// No description provided for @bionicBoldFractionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold intensity'**
+  String get bionicBoldFractionLabel;
 
   /// No description provided for @changeVersionTooltip.
   ///

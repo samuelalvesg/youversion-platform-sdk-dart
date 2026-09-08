@@ -75,7 +75,10 @@ class YouVersionReaderLocalizationsVi extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
-  String get bionicReadingLabel => 'Bionic Reading';
+  String get bionicReadingLabel => 'Bold word beginnings';
+
+  @override
+  String get bionicBoldFractionLabel => 'Bold intensity';
 
   @override
   String get changeVersionTooltip => 'Thay đổi phiên bản Kinh Thánh';

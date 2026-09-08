@@ -37,6 +37,7 @@ class BibleTextView extends StatefulWidget {
     this.highlightsByVerseId = const {},
     this.isRightToLeft = false,
     this.bionicReading = false,
+    this.bionicBoldFraction = 1 / 3,
     this.onVerseTap,
     this.onVerseLongPress,
     this.onFootnoteTap,
@@ -75,13 +76,23 @@ class BibleTextView extends StatefulWidget {
   /// navigation icon mirroring is handled separately by `BibleReader`).
   final bool isRightToLeft;
 
-  /// Bionic Reading - bolds roughly the first half of each word's letters
-  /// (a fixation point meant to speed up reading/help focus, not in any
-  /// of the 3 official SDKs). Splits each text run into per-word bold/
-  /// regular span pairs instead of one plain [TextSpan] - verse numbers
-  /// and footnote markers are untouched either way, only actual scripture
-  /// words are affected.
+  /// Bolds the leading portion of each word's letters (a fixation point
+  /// meant to speed up reading/help focus, not in any of the 3 official
+  /// SDKs). Splits each text run into per-word bold/regular span pairs
+  /// instead of one plain [TextSpan] - verse numbers and footnote markers
+  /// are untouched either way, only actual scripture words are affected.
+  /// How much of each word is bolded is [bionicBoldFraction], not fixed.
+  ///
+  /// Deliberately not labelled by any 3rd-party trademarked name
+  /// user-facing - see `ReaderFontSettings.bionicReading`'s doc comment
+  /// for the full patent/trademark note behind that and
+  /// [bionicBoldFraction]'s default.
   final bool bionicReading;
+
+  /// Fraction (`0.0`-`1.0`) of each word's leading characters bolded when
+  /// [bionicReading] is on. Default `1/3` - see [bionicReading]'s doc
+  /// comment.
+  final double bionicBoldFraction;
 
   /// Called with a verse's full USFM id when it's tapped. `null` disables
   /// tap-to-select (verses render as plain, non-interactive text unless
@@ -286,6 +297,7 @@ class _BibleTextViewState extends State<BibleTextView> {
             run.text,
             run.isWordsOfChrist ? baseStyle.copyWith(color: readerColors.wordsOfChrist) : baseStyle,
             recognizer,
+            widget.bionicBoldFraction,
           )
         else
           TextSpan(
@@ -301,13 +313,17 @@ class _BibleTextViewState extends State<BibleTextView> {
   /// Splits [text] into alternating bold-prefix/regular-suffix
   /// [TextSpan]s per word (whitespace runs pass through unstyled-bold, as
   /// their own span, so exact spacing/line-wrapping is untouched). Bold
-  /// length is `ceil(word.length / 2)`, clamped to at least 1 for any
-  /// non-empty word - a fixed, simple heuristic (not the more elaborate
-  /// syllable-aware ones some Bionic Reading implementations use), same
-  /// spirit as most reader-app implementations of this feature. The same
-  /// [recognizer] is reused across every span for a given run - safe,
+  /// length is `ceil(word.length * boldFraction)`, clamped to at least 1
+  /// for any non-empty word - a fixed, simple heuristic (not the more
+  /// elaborate syllable-aware ones some similar reader features use). The
+  /// same [recognizer] is reused across every span for a given run - safe,
   /// [GestureRecognizer] isn't tied 1:1 to a single [InlineSpan].
-  static List<InlineSpan> _bionicSpans(String text, TextStyle baseStyle, GestureRecognizer? recognizer) {
+  static List<InlineSpan> _bionicSpans(
+    String text,
+    TextStyle baseStyle,
+    GestureRecognizer? recognizer,
+    double boldFraction,
+  ) {
     final boldStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
     // Achado real (2026-09-07, pedido do usuário): a metade não-negrito
     // usava `baseStyle` sem alteração (mesmo peso do resto do texto) -
@@ -329,7 +345,7 @@ class _BibleTextViewState extends State<BibleTextView> {
         spans.add(TextSpan(text: token, style: baseStyle, recognizer: recognizer));
         continue;
       }
-      final boldLength = (token.length / 2).ceil().clamp(1, token.length);
+      final boldLength = (token.length * boldFraction).ceil().clamp(1, token.length);
       spans.add(TextSpan(text: token.substring(0, boldLength), style: boldStyle, recognizer: recognizer));
       if (boldLength < token.length) {
         spans.add(TextSpan(text: token.substring(boldLength), style: thinStyle, recognizer: recognizer));
