@@ -186,32 +186,32 @@ List<BibleTextBlock> parseBibleHtml(String html) {
   }
 
   for (final child in document.body?.nodes ?? const <dom.Node>[]) {
-    // Fallback for a top-level block whose class is neither a known
-    // heading ([_isHeadingElement]) nor carries its own verse marker,
-    // AND appears before this passage's first verse (`currentVerseNumber`
-    // still empty - nothing to continue yet). Found live 2026-09-07
-    // (Psalm 23, NIV/NVI/KLB): the `d` superscription ("A psalm of
-    // David.") carries NEITHER `yv-h` NOR its own `.yv-v` in these
-    // translations (unlike BDS/French, where the same `d` class DOES
-    // wrap `.yv-v` and is legitimately verse-1 content there) - without
-    // this, it silently became an orphaned ''-numbered block, invisible
-    // to `extractVersePlainText` today but one heading-order change away
-    // from gluing onto a REAL trailing verse the same way `ms1` did.
+    // Real regression found 2026-09-07 running this file's OWN test
+    // suite (should have been run immediately after a since-removed
+    // fallback here was first added, not just spot-checked live against a handful of
+    // real API responses - process gap, not repeated): a top-level
+    // block with no `yv-h`/`.yv-v` marker, appearing before verse 1,
+    // ISN'T always safe to reclassify as a dropped heading - `<div
+    // class="ip">` (a real USFM introduction-paragraph marker, actual
+    // body text meant to be READ, not a caption) hits the exact same
+    // "before verse 1, no marker" shape as the `d` Psalm-superscription
+    // case this fallback was built for, but here the correct/already-
+    // tested behavior is the opposite: keep it as an orphaned ''-numbered
+    // `BibleVerseBlock` (see `bible_text_node_test.dart`'s "groups text
+    // with no preceding verse marker under an empty-number block"), not
+    // discard it as a heading.
     //
-    // Deliberately NOT "no `.yv-v` -> heading" for the general case: a
-    // wide class survey across en/es/ko (`s1`/`ms1`/`sp`/`sr`/`cl`, all
-    // `yv-h`; `q1`-`q4`/`po`/`li1` poetry-or-paragraph continuation
-    // lines) found continuation lines with NO marker of their own are
-    // common and legitimate (e.g. Revelation 1:4's 2nd-3rd `po` lines) -
-    // blindly dropping any marker-less block would silently delete real
-    // verse text, a worse failure than the one being fixed. Restricting
-    // to "before verse 1" is safe because continuation-without-a-marker
-    // only ever makes sense once a verse is already open.
-    if (child is dom.Element && currentVerseNumber.isEmpty && !_isHeadingElement(child) && child.querySelector('.yv-v') == null) {
-      final text = child.text.trim();
-      if (text.isNotEmpty) blocks.add(BibleHeadingBlock(text));
-      continue;
-    }
+    // The fallback this comment used to guard is REMOVED, not narrowed -
+    // an orphaned ''-numbered block (the pre-existing, correct fallback
+    // for ANY marker-less top-level content, `d` included) is invisible
+    // to `extractVersePlainText` (nothing asks for verse number '') but,
+    // critically, is its OWN separate block - it never gets appended to
+    // a REAL verse's `runs`. So it was never actually at risk of gluing
+    // onto a trailing verse the way `ms1` (a genuine heading, now caught
+    // by `_isHeadingElement`'s `yv-h` check above) did - the risk this
+    // fallback was written to close never existed for the "no marker at
+    // all" case, only for "IS a real heading but not recognized as one",
+    // which `yv-h` already covers on its own.
     walk(child, inWordsOfChrist: false);
   }
 

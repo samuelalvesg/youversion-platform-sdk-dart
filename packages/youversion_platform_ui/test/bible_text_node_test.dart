@@ -79,6 +79,51 @@ void main() {
       expect(blocks[2], isA<BibleVerseBlock>());
     });
 
+    test('ms1 (a numbered major-section heading) does not glue onto the preceding verse', () {
+      // Real bug found live 2026-09-07 (Ephesians 1 FR/BDS): `ms1` fell
+      // through into the preceding verse's text because `_headingClasses`
+      // only had the unnumbered `ms`.
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.
+        </div>
+        <div class="ms1 yv-h">Le salut en Christ</div>
+        <div class="p">
+          <span class="yv-v" v="3"></span><span class="yv-vlbl">3</span>Verse three text.
+        </div>
+      ''';
+
+      final blocks = parseBibleHtml(html);
+
+      expect(blocks, hasLength(3));
+      final verseTwo = blocks[0] as BibleVerseBlock;
+      expect(verseTwo.runs.map((r) => r.text).join().trim(), 'Verse two text.');
+      expect(blocks[1], isA<BibleHeadingBlock>());
+      expect((blocks[1] as BibleHeadingBlock).text, 'Le salut en Christ');
+      final verseThree = blocks[2] as BibleVerseBlock;
+      expect(verseThree.runs.map((r) => r.text).join().trim(), 'Verse three text.');
+    });
+
+    test('any class carrying yv-h is treated as a heading, even one not explicitly listed', () {
+      // `yv-h` is the primary signal (see `_isHeadingElement`'s doc
+      // comment) precisely so a USFM marker never seen before (here
+      // `sd1`, a semantic division heading - deliberately NOT in
+      // `_headingClasses`) is still caught, instead of repeating the
+      // `ms1` bug for the next unlisted marker.
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text.
+        </div>
+        <div class="sd1 yv-h">An Unlisted Heading Marker</div>
+      ''';
+
+      final blocks = parseBibleHtml(html);
+
+      expect(blocks, hasLength(2));
+      expect(blocks[1], isA<BibleHeadingBlock>());
+      expect((blocks[1] as BibleHeadingBlock).text, 'An Unlisted Heading Marker');
+    });
+
     test('marks text inside a .wj span as words of Christ', () {
       const html = '''
         <div class="p">

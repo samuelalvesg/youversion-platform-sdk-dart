@@ -290,6 +290,19 @@ class _BibleTextViewState extends State<BibleTextView> {
   /// [GestureRecognizer] isn't tied 1:1 to a single [InlineSpan].
   static List<InlineSpan> _bionicSpans(String text, TextStyle baseStyle, GestureRecognizer? recognizer) {
     final boldStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
+    // Achado real (2026-09-07, pedido do usuário): a metade não-negrito
+    // usava `baseStyle` sem alteração (mesmo peso do resto do texto) -
+    // afinada aqui (`w300`) pra aumentar o contraste com o prefixo em
+    // negrito, como a maioria das implementações reais de Bionic
+    // Reading faz. Só funciona de verdade com a fonte PADRÃO do sistema
+    // (que tem uma face "Light" de verdade) - `OpenDyslexic`/
+    // `AtkinsonHyperlegible` (`pubspec.yaml` deste app, únicas fontes
+    // customizadas hoje) só empacotam Regular(400)/Bold(700), então o
+    // Flutter cai de volta pro peso mais próximo disponível (Regular)
+    // pra essas duas - degrada bem (não quebra, só não fica mais fino),
+    // não corrigido aqui (exigiria adicionar um arquivo de fonte "Light"
+    // pra cada uma).
+    final thinStyle = baseStyle.copyWith(fontWeight: FontWeight.w300);
     final spans = <InlineSpan>[];
     for (final match in RegExp(r'\s+|\S+').allMatches(text)) {
       final token = match.group(0)!;
@@ -300,7 +313,7 @@ class _BibleTextViewState extends State<BibleTextView> {
       final boldLength = (token.length / 2).ceil().clamp(1, token.length);
       spans.add(TextSpan(text: token.substring(0, boldLength), style: boldStyle, recognizer: recognizer));
       if (boldLength < token.length) {
-        spans.add(TextSpan(text: token.substring(boldLength), style: baseStyle, recognizer: recognizer));
+        spans.add(TextSpan(text: token.substring(boldLength), style: thinStyle, recognizer: recognizer));
       }
     }
     return spans;
