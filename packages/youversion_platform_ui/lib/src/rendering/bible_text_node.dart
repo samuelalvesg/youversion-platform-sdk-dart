@@ -64,7 +64,20 @@ class BibleTextRun {
 /// Section-heading class names YouVersion's passage HTML uses for USFM
 /// heading markers - confirmed against `platform-sdk-react`'s
 /// `bible-html-transformer.ts` (`s1`/`s2`/`ms`/`sp`/`sr`/`r`).
-const _headingClasses = {'s1', 's2', 'ms', 'sp', 'sr', 'r'};
+///
+/// Real bug found 2026-09-07 (reported live: Ephesians 1 FR/BDS,
+/// `GET /v1/bibles/21/passages/EPH.1`) - `ms1` ("Le salut en Christ", a
+/// numbered MAJOR section heading, distinct from the unnumbered `s1`/`s2`
+/// pair already covered) fell through this check into the generic
+/// text-walking branch below, so its text got appended to the END of the
+/// PRECEDING verse instead of being dropped as a heading - both on
+/// screen and, worse, fed straight into TTS as if it were verse content
+/// ("...Jésus-Christ. Le salut en Christ" read aloud as one sentence).
+/// `ms`/`ms1`-`ms4` and `mr` (major-section reference, the `ms`-family
+/// counterpart to `r`) are all real USFM markers - added here the same
+/// way `s1`/`s2` already were, rather than leaving only the unnumbered
+/// `ms` covered.
+const _headingClasses = {'s1', 's2', 'ms', 'ms1', 'ms2', 'ms3', 'ms4', 'mr', 'sp', 'sr', 'r'};
 
 /// USFM poetry-line classes YouVersion's passage HTML uses, mapped to an
 /// indent level. `qc` (centered) and `qs` (selah) don't have a real
