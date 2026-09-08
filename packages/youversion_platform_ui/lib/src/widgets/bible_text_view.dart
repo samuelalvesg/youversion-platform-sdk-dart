@@ -118,6 +118,23 @@ class _BibleTextViewState extends State<BibleTextView> {
   final List<GestureRecognizer> _recognizers = [];
   final Map<String, GlobalKey> _verseKeys = {};
 
+  // Real perf bug found live 2026-09-08 (reported as recurring Android
+  // ANRs "app not responding"): `build()` used to call
+  // `parseBibleHtml(widget.content)` directly, every single rebuild -
+  // including ones that have nothing to do with the passage TEXT
+  // changing (e.g. `BibleWithMe`'s TTS "currently speaking verse"
+  // highlight, which calls `setState` on its whole page once per
+  // segment/verse while reading a chapter aloud). Re-parsing a whole
+  // chapter's HTML (DOM parse via `package:html` + walking every node)
+  // on every one of those, for every verse spoken, is real, avoidable
+  // main-thread work - long/dense chapters (Psalm 119, 176 verses) make
+  // it worse. Cached here instead, recomputed only when [widget.content]
+  // itself actually changes - everything else that varies per-rebuild
+  // (`selectedVerseIds`/`highlightsByVerseId`/`scrollToVerseId`/
+  // `bionicReading`/callbacks) only affects how the ALREADY-parsed
+  // blocks are turned into spans in `build()`, not the parse itself.
+  late List<BibleTextBlock> _blocks = parseBibleHtml(widget.content);
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +144,9 @@ class _BibleTextViewState extends State<BibleTextView> {
   @override
   void didUpdateWidget(covariant BibleTextView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.content != oldWidget.content) {
+      _blocks = parseBibleHtml(widget.content);
+    }
     if (widget.scrollToVerseId != null && widget.scrollToVerseId != oldWidget.scrollToVerseId) {
       _scheduleScroll();
     }
@@ -195,10 +215,9 @@ class _BibleTextViewState extends State<BibleTextView> {
 
     final textTheme = BibleTextTheme.of(context);
     final readerColors = ReaderColorScheme.of(context);
-    final blocks = parseBibleHtml(widget.content);
 
     final children = <Widget>[
-      for (final block in blocks)
+      for (final block in _blocks)
         if (block is BibleHeadingBlock)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
