@@ -36,8 +36,8 @@ class BibleTextView extends StatefulWidget {
     this.selectedVerseIds = const {},
     this.highlightsByVerseId = const {},
     this.isRightToLeft = false,
-    this.bionicReading = false,
-    this.bionicBoldFraction = 1 / 3,
+    this.initBold = false,
+    this.initBoldFraction = 1 / 3,
     this.onVerseTap,
     this.onVerseLongPress,
     this.onFootnoteTap,
@@ -81,18 +81,18 @@ class BibleTextView extends StatefulWidget {
   /// SDKs). Splits each text run into per-word bold/regular span pairs
   /// instead of one plain [TextSpan] - verse numbers and footnote markers
   /// are untouched either way, only actual scripture words are affected.
-  /// How much of each word is bolded is [bionicBoldFraction], not fixed.
+  /// How much of each word is bolded is [initBoldFraction], not fixed.
   ///
   /// Deliberately not labelled by any 3rd-party trademarked name
-  /// user-facing - see `ReaderFontSettings.bionicReading`'s doc comment
+  /// user-facing - see `ReaderFontSettings.initBold`'s doc comment
   /// for the full patent/trademark note behind that and
-  /// [bionicBoldFraction]'s default.
-  final bool bionicReading;
+  /// [initBoldFraction]'s default.
+  final bool initBold;
 
   /// Fraction (`0.0`-`1.0`) of each word's leading characters bolded when
-  /// [bionicReading] is on. Default `1/3` - see [bionicReading]'s doc
+  /// [initBold] is on. Default `1/3` - see [initBold]'s doc
   /// comment.
-  final double bionicBoldFraction;
+  final double initBoldFraction;
 
   /// Called with a verse's full USFM id when it's tapped. `null` disables
   /// tap-to-select (verses render as plain, non-interactive text unless
@@ -142,7 +142,7 @@ class _BibleTextViewState extends State<BibleTextView> {
   // it worse. Cached here instead, recomputed only when [widget.content]
   // itself actually changes - everything else that varies per-rebuild
   // (`selectedVerseIds`/`highlightsByVerseId`/`scrollToVerseId`/
-  // `bionicReading`/callbacks) only affects how the ALREADY-parsed
+  // `initBold`/callbacks) only affects how the ALREADY-parsed
   // blocks are turned into spans in `build()`, not the parse itself.
   late List<BibleTextBlock> _blocks = parseBibleHtml(widget.content);
 
@@ -292,12 +292,12 @@ class _BibleTextViewState extends State<BibleTextView> {
             style: baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 15) * 0.8),
             recognizer: _footnoteRecognizerFor(run.footnoteText!),
           )
-        else if (widget.bionicReading)
-          ..._bionicSpans(
+        else if (widget.initBold)
+          ..._initBoldSpans(
             run.text,
             run.isWordsOfChrist ? baseStyle.copyWith(color: readerColors.wordsOfChrist) : baseStyle,
             recognizer,
-            widget.bionicBoldFraction,
+            widget.initBoldFraction,
           )
         else
           TextSpan(
@@ -318,7 +318,7 @@ class _BibleTextViewState extends State<BibleTextView> {
   /// elaborate syllable-aware ones some similar reader features use). The
   /// same [recognizer] is reused across every span for a given run - safe,
   /// [GestureRecognizer] isn't tied 1:1 to a single [InlineSpan].
-  static List<InlineSpan> _bionicSpans(
+  static List<InlineSpan> _initBoldSpans(
     String text,
     TextStyle baseStyle,
     GestureRecognizer? recognizer,

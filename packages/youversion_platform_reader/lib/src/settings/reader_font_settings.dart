@@ -17,8 +17,8 @@ class ReaderFontSettings {
     this.lineHeight = 1.5,
     this.fontFamily,
     this.theme = ReaderTheme.pureWhite,
-    this.bionicReading = false,
-    this.bionicBoldFraction = 1 / 3,
+    this.initBold = false,
+    this.initBoldFraction = 1 / 3,
   });
 
   static const List<double> availableFontSizes = [9, 10, 12, 14, 15, 16, 18, 20, 21, 24, 28, 32];
@@ -35,32 +35,32 @@ class ReaderFontSettings {
   /// extra [ReaderTheme] presets). [BibleTextView] does the actual
   /// per-word span splitting; this field is just the saved on/off
   /// preference - how MUCH of each word gets bolded is
-  /// [bionicBoldFraction], separate from this toggle.
+  /// [initBoldFraction], separate from this toggle.
   ///
   /// Deliberately NOT named/labelled "Bionic Reading" anywhere user-facing
-  /// (see `bionicReadingLabel` in the `.arb`s, changed 2026-09-08) - that
+  /// (see `initBoldLabel` in the `.arb`s, changed 2026-09-08) - that
   /// term is a registered trademark (BRCG Casutt GmbH, US/EU/CH/CA/JP/AU/
   /// NZ/UK/LI) for a commercial product with its own patent (granted in
   /// France, FR1755215 - the fixed emphasis fractions it claims in its
   /// preferred embodiments are 2/5 and 3/5 of a word's leading characters,
   /// or a fixed 3-character prefix for longer words). The Dart identifier
   /// here keeps the internal name (just an implementation detail, not
-  /// user-facing/marketing) but [bionicBoldFraction]'s default (`1/3`,
+  /// user-facing/marketing) but [initBoldFraction]'s default (`1/3`,
   /// `0.333...`) was chosen specifically to sit OUTSIDE those claimed
   /// fixed fractions, not copy them - this is engineering due diligence,
   /// not legal advice; consult a lawyer before shipping this feature
   /// commercially in a jurisdiction with a granted patent (France, as far
   /// as could be confirmed from the rights holder's own public IP page).
-  final bool bionicReading;
+  final bool initBold;
 
   /// Fraction (`0.0`-`1.0`) of each word's leading characters that gets
-  /// bolded when [bionicReading] is on - `ceil(word.length * fraction)`,
+  /// bolded when [initBold] is on - `ceil(word.length * fraction)`,
   /// clamped to at least 1 for any non-empty word (see
-  /// `BibleTextView._bionicSpans`). Default `1/3` - see the patent-
-  /// avoidance note on [bionicReading] for why this specific value.
+  /// `BibleTextView._initBoldSpans`). Default `1/3` - see the patent-
+  /// avoidance note on [initBold] for why this specific value.
   /// Adjustable (2026-09-08 ask) via a slider in [FontSettingsSheet],
   /// same "aplica na hora" pattern as font size/line height.
-  final double bionicBoldFraction;
+  final double initBoldFraction;
 
   /// The next-smaller preset in [availableFontSizes], or [fontSize]
   /// unchanged if already at the smallest - no wraparound. Mirrors
@@ -83,16 +83,16 @@ class ReaderFontSettings {
     double? lineHeight,
     String? fontFamily,
     ReaderTheme? theme,
-    bool? bionicReading,
-    double? bionicBoldFraction,
+    bool? initBold,
+    double? initBoldFraction,
   }) {
     return ReaderFontSettings(
       fontSize: fontSize ?? this.fontSize,
       lineHeight: lineHeight ?? this.lineHeight,
       fontFamily: fontFamily ?? this.fontFamily,
       theme: theme ?? this.theme,
-      bionicReading: bionicReading ?? this.bionicReading,
-      bionicBoldFraction: bionicBoldFraction ?? this.bionicBoldFraction,
+      initBold: initBold ?? this.initBold,
+      initBoldFraction: initBoldFraction ?? this.initBoldFraction,
     );
   }
 
@@ -101,8 +101,8 @@ class ReaderFontSettings {
         'line_height': lineHeight,
         'font_family': fontFamily,
         'theme': theme.name,
-        'bionic_reading': bionicReading,
-        'bionic_bold_fraction': bionicBoldFraction,
+        'init_bold': initBold,
+        'init_bold_fraction': initBoldFraction,
       };
 
   factory ReaderFontSettings.fromJson(Map<String, dynamic> json) {
@@ -111,13 +111,13 @@ class ReaderFontSettings {
       lineHeight: (json['line_height'] as num?)?.toDouble() ?? 1.5,
       fontFamily: json['font_family'] as String?,
       theme: ReaderTheme.fromName(json['theme'] as String?),
-      bionicReading: json['bionic_reading'] as bool? ?? false,
+      initBold: json['init_bold'] as bool? ?? false,
       // `?? (1 / 3)` (não só o default do construtor) - JSON salvo ANTES
       // deste campo existir não tem a chave, `as num?` já cobre isso
       // sozinho, mas explícito aqui deixa claro que é intencional (versão
       // antiga do app = mesmo comportamento de hoje, não `0`/negrito
       // vazio).
-      bionicBoldFraction: (json['bionic_bold_fraction'] as num?)?.toDouble() ?? (1 / 3),
+      initBoldFraction: (json['init_bold_fraction'] as num?)?.toDouble() ?? (1 / 3),
     );
   }
 }

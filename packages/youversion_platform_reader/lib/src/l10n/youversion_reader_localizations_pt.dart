@@ -75,10 +75,10 @@ class YouVersionReaderLocalizationsPt extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Noite na Floresta';
 
   @override
-  String get bionicReadingLabel => 'Init Bold';
+  String get initBoldLabel => 'Init Bold';
 
   @override
-  String get bionicBoldFractionLabel => 'Intensidade do negrito';
+  String get initBoldFractionLabel => 'Intensidade do negrito';
 
   @override
   String get changeVersionTooltip => 'Alterar versão da Bíblia';

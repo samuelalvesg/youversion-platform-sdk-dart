@@ -75,10 +75,10 @@ class YouVersionReaderLocalizationsTr extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
-  String get bionicReadingLabel => 'Init Bold';
+  String get initBoldLabel => 'Init Bold';
 
   @override
-  String get bionicBoldFractionLabel => 'Bold intensity';
+  String get initBoldFractionLabel => 'Bold intensity';
 
   @override
   String get changeVersionTooltip => 'Kutsal Kitap çeviri versiyonunu değiştir';

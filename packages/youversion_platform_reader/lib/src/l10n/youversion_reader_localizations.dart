@@ -255,17 +255,17 @@ abstract class YouVersionReaderLocalizations {
   /// **'Forest Night'**
   String get themeForestNight;
 
-  /// No description provided for @bionicReadingLabel.
+  /// No description provided for @initBoldLabel.
   ///
   /// In en, this message translates to:
   /// **'Init Bold'**
-  String get bionicReadingLabel;
+  String get initBoldLabel;
 
-  /// No description provided for @bionicBoldFractionLabel.
+  /// No description provided for @initBoldFractionLabel.
   ///
   /// In en, this message translates to:
   /// **'Bold intensity'**
-  String get bionicBoldFractionLabel;
+  String get initBoldFractionLabel;
 
   /// No description provided for @changeVersionTooltip.
   ///

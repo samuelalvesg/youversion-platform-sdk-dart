@@ -141,9 +141,9 @@ class _FontSettingsSheetState extends State<FontSettingsSheet> {
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(strings.bionicReadingLabel),
-              value: settings.bionicReading,
-              onChanged: (value) => _update(settings.copyWith(bionicReading: value)),
+              title: Text(strings.initBoldLabel),
+              value: settings.initBold,
+              onChanged: (value) => _update(settings.copyWith(initBold: value)),
             ),
             // Só ajustável com a opção acima ligada - `Slider.onChanged:
             // null` já desabilita visualmente sozinho (cinza, sem
@@ -151,22 +151,22 @@ class _FontSettingsSheetState extends State<FontSettingsSheet> {
             // de 5% (20 divisions em 0.15-1.0) - min 15% pra sempre restar
             // negrito visível, mesmo bem sutil.
             Opacity(
-              opacity: settings.bionicReading ? 1 : 0.5,
+              opacity: settings.initBold ? 1 : 0.5,
               child: Row(
                 children: [
-                  Expanded(child: Text(strings.bionicBoldFractionLabel)),
-                  Text('${(settings.bionicBoldFraction * 100).round()}%'),
+                  Expanded(child: Text(strings.initBoldFractionLabel)),
+                  Text('${(settings.initBoldFraction * 100).round()}%'),
                 ],
               ),
             ),
             Slider(
-              value: settings.bionicBoldFraction,
+              value: settings.initBoldFraction,
               min: 0.15,
               max: 1.0,
               divisions: 17,
-              label: '${(settings.bionicBoldFraction * 100).round()}%',
-              onChanged: settings.bionicReading
-                  ? (value) => _update(settings.copyWith(bionicBoldFraction: value))
+              label: '${(settings.initBoldFraction * 100).round()}%',
+              onChanged: settings.initBold
+                  ? (value) => _update(settings.copyWith(initBoldFraction: value))
                   : null,
             ),
           ],
