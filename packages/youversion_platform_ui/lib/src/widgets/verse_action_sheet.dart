@@ -42,6 +42,7 @@ class VerseActionSheet extends StatefulWidget {
     this.onColorSelected,
     this.onRemoveHighlight,
     this.selectedColor,
+    this.colors = HighlightColors.all,
   });
 
   final VoidCallback? onCopy;
@@ -52,6 +53,15 @@ class VerseActionSheet extends StatefulWidget {
   /// Hex color (from [HighlightColors]) currently applied, if any - drawn
   /// with a selection ring.
   final String? selectedColor;
+
+  /// Which palette to show as swatches - defaults to
+  /// [HighlightColors.all], the same fixed 5-color set every official
+  /// SDK uses. A host app can pass [HighlightColors.colorblindSafe]
+  /// instead (or any other 5-hex list) as a user-facing accessibility
+  /// preference - swapping this never touches highlights already
+  /// created with a color from the OTHER palette, each highlight just
+  /// stores its own hex regardless of which list offered it.
+  final List<String> colors;
 
   @override
   State<VerseActionSheet> createState() => _VerseActionSheetState();
@@ -85,7 +95,7 @@ class _VerseActionSheetState extends State<VerseActionSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  for (final hex in HighlightColors.all)
+                  for (final hex in widget.colors)
                     _ColorSwatch(
                       hex: hex,
                       label: _highlightColorLabel(strings, hex),

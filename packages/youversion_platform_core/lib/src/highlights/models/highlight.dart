@@ -55,4 +55,29 @@ abstract final class HighlightColors {
   static const String pink = 'ff95ef';
 
   static const List<String> all = [yellow, green, cyan, orange, pink];
+
+  /// Alternative palette, distinguishable under the 2 most common forms
+  /// of color vision deficiency (deuteranopia/protanopia) - 5 hues from
+  /// the Okabe & Ito (2008) "Color Universal Design" set, lightened
+  /// (mixed toward white) to stay legible as a TEXT-HIGHLIGHT background
+  /// the same way [all]'s own pastel tones already are - the original
+  /// Okabe-Ito hues are correct for chart/UI elements but too saturated
+  /// for text to stay readable painted over them. Same length/ordering
+  /// convention as [all] (a caller swapping palettes swaps 1:1 by index,
+  /// no re-mapping of already-applied highlight colors needed - a
+  /// highlight already stores its own hex, this only changes what's
+  /// OFFERED going forward).
+  static const String colorblindYellow = 'f2e98a';
+  static const String colorblindBluishGreen = '80cbb3';
+  static const String colorblindSkyBlue = '8ecdf2';
+  static const String colorblindOrange = 'e6b366';
+  static const String colorblindReddishPurple = 'dda6c2';
+
+  static const List<String> colorblindSafe = [
+    colorblindYellow,
+    colorblindBluishGreen,
+    colorblindSkyBlue,
+    colorblindOrange,
+    colorblindReddishPurple,
+  ];
 }
