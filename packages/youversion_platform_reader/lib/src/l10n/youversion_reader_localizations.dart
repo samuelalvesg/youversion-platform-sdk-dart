@@ -255,6 +255,18 @@ abstract class YouVersionReaderLocalizations {
   /// **'Forest Night'**
   String get themeForestNight;
 
+  /// No description provided for @themePureContrastLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure Contrast (Light)'**
+  String get themePureContrastLight;
+
+  /// No description provided for @themePureContrastDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure Contrast (Dark)'**
+  String get themePureContrastDark;
+
   /// No description provided for @initBoldLabel.
   ///
   /// In en, this message translates to:

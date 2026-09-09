@@ -22,6 +22,8 @@
   "themeTrueBlack": "True Black",
   "themeGraphite": "Graphite",
   "themeForestNight": "Forest Night",
+  "themePureContrastLight": "Pure Contrast (Light)",
+  "themePureContrastDark": "Pure Contrast (Dark)",
   "initBoldLabel": "Init Bold",
   "initBoldFractionLabel": "Bold intensity",
   "changeVersionTooltip": "Change Bible version",

@@ -1,24 +1,38 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youversion_platform_reader/youversion_platform_reader.dart';
 
 void main() {
-  test('11 presets, 6 light + 5 dark - 7 matching Kotlin ReaderThemes.kt plus 4 extras', () {
-    expect(ReaderTheme.values, hasLength(11));
-    expect(ReaderTheme.values.where((t) => !t.isDark), [
-      ReaderTheme.pureWhite,
-      ReaderTheme.sepia,
-      ReaderTheme.paperGray,
-      ReaderTheme.cream,
-      ReaderTheme.mint,
-      ReaderTheme.skyBlue,
-    ]);
-    expect(ReaderTheme.values.where((t) => t.isDark), [
-      ReaderTheme.charcoal,
-      ReaderTheme.midnightBlue,
-      ReaderTheme.trueBlack,
-      ReaderTheme.graphite,
-      ReaderTheme.forestNight,
-    ]);
+  test(
+    '13 presets, 7 light + 6 dark - 7 matching Kotlin ReaderThemes.kt plus 6 extras '
+    '(4 original + WCAG AAA pure-contrast light/dark pair)',
+    () {
+      expect(ReaderTheme.values, hasLength(13));
+      expect(ReaderTheme.values.where((t) => !t.isDark), [
+        ReaderTheme.pureWhite,
+        ReaderTheme.sepia,
+        ReaderTheme.paperGray,
+        ReaderTheme.cream,
+        ReaderTheme.mint,
+        ReaderTheme.skyBlue,
+        ReaderTheme.pureContrastLight,
+      ]);
+      expect(ReaderTheme.values.where((t) => t.isDark), [
+        ReaderTheme.charcoal,
+        ReaderTheme.midnightBlue,
+        ReaderTheme.trueBlack,
+        ReaderTheme.graphite,
+        ReaderTheme.forestNight,
+        ReaderTheme.pureContrastDark,
+      ]);
+    },
+  );
+
+  test('pureContrastLight/pureContrastDark are true pure black/white (WCAG AAA, ~21:1 contrast)', () {
+    expect(ReaderTheme.pureContrastLight.background, const Color(0xFFFFFFFF));
+    expect(ReaderTheme.pureContrastLight.foreground, const Color(0xFF000000));
+    expect(ReaderTheme.pureContrastDark.background, const Color(0xFF000000));
+    expect(ReaderTheme.pureContrastDark.foreground, const Color(0xFFFFFFFF));
   });
 
   test('fromName round-trips with .name', () {

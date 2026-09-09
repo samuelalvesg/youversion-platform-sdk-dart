@@ -63,6 +63,8 @@ class _FontSettingsSheetState extends State<FontSettingsSheet> {
       ReaderTheme.trueBlack => strings.themeTrueBlack,
       ReaderTheme.graphite => strings.themeGraphite,
       ReaderTheme.forestNight => strings.themeForestNight,
+      ReaderTheme.pureContrastLight => strings.themePureContrastLight,
+      ReaderTheme.pureContrastDark => strings.themePureContrastDark,
     };
   }
 

@@ -75,6 +75,12 @@ class YouVersionReaderLocalizationsPt extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Noite na Floresta';
 
   @override
+  String get themePureContrastLight => 'Contraste Puro (Claro)';
+
+  @override
+  String get themePureContrastDark => 'Contraste Puro (Escuro)';
+
+  @override
   String get initBoldLabel => 'Init Bold';
 
   @override

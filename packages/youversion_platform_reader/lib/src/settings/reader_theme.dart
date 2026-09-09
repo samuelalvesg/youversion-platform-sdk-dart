@@ -23,7 +23,17 @@ enum ReaderTheme {
   midnightBlue(background: Color(0xFF1C2A3B), foreground: Colors.white, isDark: true),
   trueBlack(background: Color(0xFF121212), foreground: Colors.white, isDark: true),
   graphite(background: Color(0xFF3A3A3A), foreground: Colors.white, isDark: true),
-  forestNight(background: Color(0xFF1B2B22), foreground: Colors.white, isDark: true);
+  forestNight(background: Color(0xFF1B2B22), foreground: Colors.white, isDark: true),
+  // Pedido do usuário (2026-09-08, item do BACKLOG do bible_with_me):
+  // "Extra-high-contrast reading theme (WCAG AAA)" - preto/branco PUROS
+  // (`0xFFFFFFFF`/`0xFF000000`, ~21:1 de contraste), diferente de todos
+  // os presets acima (mesmo `pureWhite`/`trueBlack` usam `0xFF121212`
+  // como o lado escuro, não preto puro - e nenhum dos claros usa preto
+  // puro no texto). WCAG AAA pra texto normal exige só 7:1 - 21:1 é o
+  // teto físico do RGB de 8 bits, garantindo a leitura AAA em qualquer
+  // tamanho de fonte.
+  pureContrastLight(background: Color(0xFFFFFFFF), foreground: Color(0xFF000000), isDark: false),
+  pureContrastDark(background: Color(0xFF000000), foreground: Color(0xFFFFFFFF), isDark: true);
 
   const ReaderTheme({required this.background, required this.foreground, required this.isDark});
 

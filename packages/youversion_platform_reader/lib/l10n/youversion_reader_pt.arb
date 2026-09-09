@@ -22,6 +22,8 @@
   "themeTrueBlack": "Preto Absoluto",
   "themeGraphite": "Grafite",
   "themeForestNight": "Noite na Floresta",
+  "themePureContrastLight": "Contraste Puro (Claro)",
+  "themePureContrastDark": "Contraste Puro (Escuro)",
   "initBoldLabel": "Init Bold",
   "initBoldFractionLabel": "Intensidade do negrito",
   "changeVersionTooltip": "Alterar versão da Bíblia",

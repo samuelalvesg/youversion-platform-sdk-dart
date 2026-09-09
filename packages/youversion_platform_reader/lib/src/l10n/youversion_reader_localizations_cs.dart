@@ -75,6 +75,12 @@ class YouVersionReaderLocalizationsCs extends YouVersionReaderLocalizations {
   String get themeForestNight => 'Forest Night';
 
   @override
+  String get themePureContrastLight => 'Pure Contrast (Light)';
+
+  @override
+  String get themePureContrastDark => 'Pure Contrast (Dark)';
+
+  @override
   String get initBoldLabel => 'Init Bold';
 
   @override
