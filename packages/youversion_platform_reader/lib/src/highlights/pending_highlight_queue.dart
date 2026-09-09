@@ -51,6 +51,30 @@ class PendingHighlightQueue {
     await _save(requests);
   }
 
+  /// Pending requests for one chapter of one bible, as `passageId -> color`
+  /// - same shape a caller's own "verse id -> highlight color" map already
+  /// uses (e.g. `bible_with_me`'s `_verseHighlights`), so a signed-out
+  /// caller can merge this straight in without reshaping anything.
+  ///
+  /// [chapterPassageId] is the CHAPTER's own passage id (e.g. `'GEN.1'`,
+  /// not a full verse id like `'GEN.1.1'`) - every verse-level
+  /// [PendingHighlightRequest.passageId] queued for that chapter is that
+  /// same string plus `'.<verse>'`, so a plain prefix match (with the
+  /// separating dot included, so `'GEN.1'` doesn't also match `'GEN.10'`)
+  /// finds exactly the right subset without needing any chapter field on
+  /// [PendingHighlightRequest] itself.
+  Future<Map<String, String>> pendingHighlightsFor({
+    required int bibleId,
+    required String chapterPassageId,
+  }) async {
+    final requests = await load();
+    return {
+      for (final request in requests)
+        if (request.bibleId == bibleId && request.passageId.startsWith('$chapterPassageId.'))
+          request.passageId: request.color,
+    };
+  }
+
   /// Replays every queued request against [client] using [userAccessToken],
   /// then clears the queue. Requests that fail are dropped rather than
   /// retried indefinitely - a stale bible/passage id shouldn't block the

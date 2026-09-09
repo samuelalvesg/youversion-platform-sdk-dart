@@ -19,4 +19,25 @@ void main() {
     final queue = PendingHighlightQueue(InMemoryReaderStorage());
     expect(await queue.load(), isEmpty);
   });
+
+  group('pendingHighlightsFor', () {
+    test('returns only entries matching bibleId and chapter prefix', () async {
+      final queue = PendingHighlightQueue(InMemoryReaderStorage());
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 1, passageId: 'GEN.1.1', color: 'aaaaaa'));
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 1, passageId: 'GEN.1.2', color: 'bbbbbb'));
+      // Different chapter, same bible - 'GEN.1' must not prefix-match 'GEN.10.1'.
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 1, passageId: 'GEN.10.1', color: 'cccccc'));
+      // Different bible, same chapter/verse.
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 2, passageId: 'GEN.1.1', color: 'dddddd'));
+
+      final result = await queue.pendingHighlightsFor(bibleId: 1, chapterPassageId: 'GEN.1');
+
+      expect(result, {'GEN.1.1': 'aaaaaa', 'GEN.1.2': 'bbbbbb'});
+    });
+
+    test('returns empty map when nothing matches', () async {
+      final queue = PendingHighlightQueue(InMemoryReaderStorage());
+      expect(await queue.pendingHighlightsFor(bibleId: 1, chapterPassageId: 'GEN.1'), isEmpty);
+    });
+  });
 }
