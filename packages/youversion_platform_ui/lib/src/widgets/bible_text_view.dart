@@ -170,7 +170,15 @@ class _BibleTextViewState extends State<BibleTextView> {
       if (!mounted) return;
       final context = _verseKeys[verseId]?.currentContext;
       if (context == null) return;
-      Scrollable.ensureVisible(context, alignment: 0.3, duration: const Duration(milliseconds: 400));
+      // Respeita "reduzir movimento" do sistema (mesmo padrão já usado
+      // pro colapso do cabeçalho/barra de navegação em bible_with_me) -
+      // `MediaQuery.disableAnimations` zera a duração em vez de animar
+      // o scroll até o versículo.
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.3,
+        duration: MediaQuery.of(context).disableAnimations ? Duration.zero : const Duration(milliseconds: 400),
+      );
     });
   }
 
