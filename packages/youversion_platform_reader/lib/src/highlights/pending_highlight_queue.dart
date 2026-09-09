@@ -51,6 +51,21 @@ class PendingHighlightQueue {
     await _save(requests);
   }
 
+  /// Drops any queued request(s) for one verse of one bible - a signed-
+  /// out user removing a highlight they'd just enqueued (never actually
+  /// sent to the server yet) needs this, otherwise it silently comes
+  /// back: [pendingHighlightsFor] would still return it on the next
+  /// chapter open, AND [replay] would still recreate it server-side
+  /// once the user eventually signs in - both would happen with no
+  /// further action from the user, contradicting the removal they just
+  /// did. No-op if nothing queued matches.
+  Future<void> removePending({required int bibleId, required String passageId}) async {
+    final requests = await load();
+    final filtered = requests.where((r) => !(r.bibleId == bibleId && r.passageId == passageId)).toList();
+    if (filtered.length == requests.length) return;
+    await _save(filtered);
+  }
+
   /// Pending requests for one chapter of one bible, as `passageId -> color`
   /// - same shape a caller's own "verse id -> highlight color" map already
   /// uses (e.g. `bible_with_me`'s `_verseHighlights`), so a signed-out

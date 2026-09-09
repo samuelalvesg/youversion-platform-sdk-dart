@@ -3,7 +3,7 @@ description: >-
   Unofficial Flutter full Bible-reading screen for the YouVersion Platform:
   passage view, chapter navigation, highlight creation, and font/theme
   settings. Builds on youversion_platform_ui and youversion_platform_core.
-version: 0.3.1
+version: 0.3.2
 homepage: https://github.com/samuelalvesg/youversion-platform-sdk-dart
 repository: https://github.com/samuelalvesg/youversion-platform-sdk-dart
 topics:

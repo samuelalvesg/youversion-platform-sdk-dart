@@ -40,4 +40,29 @@ void main() {
       expect(await queue.pendingHighlightsFor(bibleId: 1, chapterPassageId: 'GEN.1'), isEmpty);
     });
   });
+
+  group('removePending', () {
+    test('drops only the matching bibleId+passageId entry', () async {
+      final queue = PendingHighlightQueue(InMemoryReaderStorage());
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 1, passageId: 'GEN.1.1', color: 'aaaaaa'));
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 1, passageId: 'GEN.1.2', color: 'bbbbbb'));
+      // Same passageId, different bible - must survive the removal below.
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 2, passageId: 'GEN.1.1', color: 'cccccc'));
+
+      await queue.removePending(bibleId: 1, passageId: 'GEN.1.1');
+
+      final remaining = await queue.load();
+      expect(remaining.map((r) => (r.bibleId, r.passageId)), [(1, 'GEN.1.2'), (2, 'GEN.1.1')]);
+    });
+
+    test('is a no-op when nothing matches', () async {
+      final storage = InMemoryReaderStorage();
+      final queue = PendingHighlightQueue(storage);
+      await queue.enqueue(const PendingHighlightRequest(bibleId: 1, passageId: 'GEN.1.1', color: 'aaaaaa'));
+
+      await queue.removePending(bibleId: 1, passageId: 'GEN.1.2');
+
+      expect(await queue.load(), hasLength(1));
+    });
+  });
 }
