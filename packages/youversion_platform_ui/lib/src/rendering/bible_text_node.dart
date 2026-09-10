@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 
@@ -24,10 +26,21 @@ final class BibleHeadingBlock extends BibleTextBlock {
 /// Empty when the block groups text with no preceding verse marker (e.g. a
 /// book/chapter intro paragraph).
 final class BibleVerseBlock extends BibleTextBlock {
-  BibleVerseBlock(this.number, this.runs);
+  BibleVerseBlock(this.number, this.runs, {this.startsNewParagraph = true});
 
   final String number;
   final List<BibleTextRun> runs;
+
+  /// `false` when this verse continues the SAME source paragraph as the
+  /// immediately preceding [BibleVerseBlock] (paragraph-style Bible
+  /// formatting - several verses run together in one `<div>`, common in
+  /// print Bibles and several translations, not just one verse per
+  /// `<div>`) - `true` (the default) when it starts a new one, including
+  /// the very first verse of the passage and any verse right after a
+  /// [BibleHeadingBlock]. A renderer uses this to decide whether to flow
+  /// this verse right after the previous one (same paragraph) or start a
+  /// new visual block for it.
+  final bool startsNewParagraph;
 }
 
 /// One run of text within a verse, with formatting/footnote flags.
@@ -157,11 +170,30 @@ List<BibleTextBlock> parseBibleHtml(String html) {
   final blocks = <BibleTextBlock>[];
   final verseBlocksByNumber = <String, BibleVerseBlock>{};
   var currentVerseNumber = '';
+  // Paragraph-grouping tracking (real gap found 2026-09-10: this parser
+  // already separated every verse into its own block correctly even when
+  // several shared one source `<div>` - "paragraph-style" Bible
+  // formatting, common in print Bibles - but nothing recorded WHETHER 2
+  // verses actually shared one, so `BibleTextView` had no way to render
+  // them flowing together instead of each on its own line). `topLevelIndex`
+  // increments once per `document.body.nodes` iteration (below); a new
+  // [BibleVerseBlock] created while it's UNCHANGED from the last one
+  // created means both verses came from the same top-level source node -
+  // same source paragraph. Doesn't touch verses that merely CONTINUE
+  // across sibling nodes with no new marker (poetry lines) - those reuse
+  // an existing block via `verseBlocksByNumber`, never hit this branch.
+  var topLevelIndex = -1;
+  var lastBlockTopLevelIndex = -2;
 
   void appendRun(BibleTextRun run) {
     var block = verseBlocksByNumber[currentVerseNumber];
     if (block == null) {
-      block = BibleVerseBlock(currentVerseNumber, <BibleTextRun>[]);
+      block = BibleVerseBlock(
+        currentVerseNumber,
+        <BibleTextRun>[],
+        startsNewParagraph: topLevelIndex != lastBlockTopLevelIndex,
+      );
+      lastBlockTopLevelIndex = topLevelIndex;
       verseBlocksByNumber[currentVerseNumber] = block;
       blocks.add(block);
     }
@@ -248,6 +280,7 @@ List<BibleTextBlock> parseBibleHtml(String html) {
   }
 
   for (final child in document.body?.nodes ?? const <dom.Node>[]) {
+    topLevelIndex++;
     // Real regression found 2026-09-07 running this file's OWN test
     // suite (should have been run immediately after a since-removed
     // fallback here was first added, not just spot-checked live against a handful of
@@ -278,6 +311,116 @@ List<BibleTextBlock> parseBibleHtml(String html) {
   }
 
   return blocks;
+}
+
+/// Splits [html] into per-verse HTML fragments (local verse number, e.g.
+/// `"16"`, not the full USFM id) - each fragment is itself valid,
+/// re-parseable HTML, safe to feed straight into a fresh
+/// `BibleTextView(content: fragment, chapterId: ...)` to render (and let
+/// the user interact with) just that one verse on its own, independent of
+/// any other - the building block a caller needs to lay out 2 translations
+/// side by side, one verse-row at a time (e.g. inside an `IntrinsicHeight`
+/// so a longer verse on one side doesn't misalign the other).
+///
+/// Real risk checked before writing this the simple (top-level-node-only)
+/// way: some Bible formatting styles (paragraph-style print Bibles, and
+/// nothing here rules it out for this API too) run several verses
+/// together inside ONE paragraph, not one `<div>` per verse - so this
+/// walks the SAME recursive structure [parseBibleHtml] already does (verse
+/// number tracked node-by-node in document order, not just at the
+/// top level), re-emitting each leaf's own HTML tagged to whichever verse
+/// is current AT THAT POINT, then merging bottom-up - a `.yv-v` marker
+/// appearing midway through a paragraph's children correctly starts a new
+/// fragment from there, same paragraph split across as many verses as it
+/// actually contains. A poetry line (`.q1`-`.q4`/`.qc`/`.qs`) whose own
+/// content is entirely one verse gets re-wrapped in a clone of that same
+/// class per verse, so [BibleTextView]'s own parser still recognizes the
+/// line-break class when the fragment is fed back through it.
+///
+/// A section heading (`.yv-h`, see [_isHeadingElement]) is dropped, same
+/// as [parseBibleHtml] keeps it out of any [BibleVerseBlock] - it isn't
+/// any one verse's content, a per-verse fragment has nowhere sensible to
+/// put it. Content with no verse marker at all yet (e.g. a leading intro
+/// paragraph) is dropped too - nothing to align it against.
+Map<String, String> splitPassageHtmlByVerse(String html) {
+  final document = html_parser.parse(html);
+  var currentVerseNumber = '';
+  const escaper = HtmlEscape();
+
+  // `walk`/`mergeChildren` recurse into each other - declared as a `late`
+  // closure variable (not a plain local function) so the forward
+  // reference from `mergeChildren` (defined first, for readability) to
+  // `walk` (assigned after) is legal.
+  late Map<String, String> Function(dom.Node node,
+      {required bool inWordsOfChrist}) walk;
+
+  Map<String, String> mergeChildren(List<dom.Node> nodes,
+      {required bool inWordsOfChrist}) {
+    final merged = <String, StringBuffer>{};
+    for (final child in nodes) {
+      final childResult = walk(child, inWordsOfChrist: inWordsOfChrist);
+      for (final entry in childResult.entries) {
+        merged.putIfAbsent(entry.key, () => StringBuffer()).write(entry.value);
+      }
+    }
+    return {
+      for (final entry in merged.entries) entry.key: entry.value.toString()
+    };
+  }
+
+  walk = (node, {required inWordsOfChrist}) {
+    if (node is dom.Text) {
+      if (node.text.trim().isEmpty || currentVerseNumber.isEmpty)
+        return const {};
+      final text = escaper.convert(node.text);
+      return {
+        currentVerseNumber:
+            inWordsOfChrist ? '<span class="wj">$text</span>' : text
+      };
+    }
+    if (node is! dom.Element) return const {};
+
+    final classes = node.classes;
+    if (_isHeadingElement(node)) return const {};
+    if (classes.contains('yv-v')) {
+      currentVerseNumber = node.attributes['v'] ?? currentVerseNumber;
+      final verseNumber = currentVerseNumber;
+      // `.yv-v` is usually EMPTY (confirmed against every real capture -
+      // it's a bare boundary marker; the verse's actual content are
+      // SIBLING nodes processed next, by the caller's own loop, relying
+      // on `currentVerseNumber` already having been updated above) - so
+      // this node's OWN contribution is the marker itself, prepended to
+      // whatever (rare) content its own children might also carry.
+      final childResult =
+          mergeChildren(node.nodes, inWordsOfChrist: inWordsOfChrist);
+      final combined = <String, String>{...childResult};
+      combined[verseNumber] =
+          '<span class="yv-v" v="$verseNumber"></span>${combined[verseNumber] ?? ''}';
+      return combined;
+    }
+    if (classes.contains('yv-vlbl')) return const {};
+    if (classes.contains('yv-n') &&
+        (classes.contains('f') || classes.contains('x'))) {
+      if (currentVerseNumber.isEmpty) return const {};
+      return {currentVerseNumber: node.outerHtml};
+    }
+    final poetryClass = classes.firstWhere(
+        (c) => _poetryIndentLevels.containsKey(c),
+        orElse: () => '');
+    if (poetryClass.isNotEmpty) {
+      final childResult =
+          mergeChildren(node.nodes, inWordsOfChrist: inWordsOfChrist);
+      return {
+        for (final entry in childResult.entries)
+          entry.key: '<div class="$poetryClass">${entry.value}</div>'
+      };
+    }
+    final woc = inWordsOfChrist || classes.contains('wj');
+    return mergeChildren(node.nodes, inWordsOfChrist: woc);
+  };
+
+  return mergeChildren(document.body?.nodes ?? const <dom.Node>[],
+      inWordsOfChrist: false);
 }
 
 /// Plain text of a single verse (its local number, e.g. `"16"` - not the

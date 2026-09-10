@@ -312,4 +312,53 @@ void main() {
     expect(span.recognizer, isNull);
     expect(tapped, isFalse);
   });
+
+  testWidgets(
+      '2 verses sharing the same source paragraph render inside ONE RichText, flowing together',
+      (tester) async {
+    // Real gap found 2026-09-10: paragraph-style Bible formatting (several
+    // verses run together in one <div>) used to always break into a
+    // separate line per verse regardless - `parseBibleHtml` already
+    // tracked the 2 verses correctly, `BibleTextView` just never grouped
+    // them back together visually.
+    const paragraphContent = '<div class="p">'
+        '<span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text. '
+        '<span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.'
+        '</div>';
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+            body: BibleTextView(content: paragraphContent, chapterId: 'JHN.3')),
+      ),
+    );
+
+    expect(find.byType(RichText), findsOneWidget);
+    final spans = flattenSpans(rootSpan(tester));
+    expect(
+        spans.any((s) => s.text?.contains('Verse one text') == true), isTrue);
+    expect(
+        spans.any((s) => s.text?.contains('Verse two text') == true), isTrue);
+  });
+
+  testWidgets(
+      '2 verses in separate source paragraphs render as 2 separate RichTexts',
+      (tester) async {
+    const twoParagraphContent = '''
+      <div class="p">
+        <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text.
+      </div>
+      <div class="p">
+        <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.
+      </div>
+    ''';
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+            body: BibleTextView(
+                content: twoParagraphContent, chapterId: 'JHN.3')),
+      ),
+    );
+
+    expect(find.byType(RichText), findsNWidgets(2));
+  });
 }

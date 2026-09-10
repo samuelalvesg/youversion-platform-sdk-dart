@@ -212,15 +212,28 @@ class _BibleTextViewState extends State<BibleTextView> {
       _verseKeys.putIfAbsent(verseId, GlobalKey.new);
 
   /// The scrollable target for [scrollToVerseId] needs a stable
-  /// [GlobalKey] per verse; blocks with no derivable verse id (no
-  /// [chapterId], or a heading-only block) fall back to an ordinary key -
-  /// nothing ever scrolls to those anyway.
-  Key _verseKeyFor(BibleVerseBlock block) {
+  /// [GlobalKey] - one PER PARAGRAPH GROUP now (`group`, every verse
+  /// sharing the same source paragraph, [BibleVerseBlock.startsNewParagraph]
+  /// `false` chained together), not per individual verse: they all render
+  /// inside the same `Text.rich`/paragraph widget (see [build]), so there's
+  /// only one shared [BuildContext] to scroll to regardless of which verse
+  /// in the group is the actual target - `scrollToVerseId` still works,
+  /// just lands on the group's position rather than the exact pixel
+  /// offset of one verse within a (possibly tall) shared paragraph -
+  /// accepted trade-off of flowing verses together instead of one per
+  /// line. Every verse id in [group] is registered against the SAME key.
+  /// A group with no derivable verse id at all (no [chapterId]) falls
+  /// back to an ordinary key - nothing ever scrolls to those anyway.
+  Key _groupKeyFor(List<BibleVerseBlock> group) {
     final chapterId = widget.chapterId;
-    final verseId = (chapterId == null || block.number.isEmpty)
-        ? null
-        : '$chapterId.${block.number}';
-    return verseId == null ? ValueKey(block) : _keyFor(verseId);
+    GlobalKey? sharedKey;
+    for (final block in group) {
+      if (chapterId == null || block.number.isEmpty) continue;
+      final verseId = '$chapterId.${block.number}';
+      sharedKey ??= _keyFor(verseId);
+      _verseKeys[verseId] = sharedKey;
+    }
+    return sharedKey ?? ValueKey(group);
   }
 
   @override
@@ -282,23 +295,56 @@ class _BibleTextViewState extends State<BibleTextView> {
     final textTheme = BibleTextTheme.of(context);
     final readerColors = ReaderColorScheme.of(context);
 
-    final children = <Widget>[
-      for (final block in _blocks)
-        if (block is BibleHeadingBlock)
+    // Verses are grouped by [BibleVerseBlock.startsNewParagraph] - every
+    // verse chained with `false` continues the group its predecessor
+    // opened, all ending up in ONE shared `Text.rich` (paragraph-style
+    // Bible formatting: several verses flow together, not one per line).
+    // `_buildVerseSpan` itself is untouched - still one full `InlineSpan`
+    // per verse (number/highlight/selection/recognizers all unchanged),
+    // just concatenated under a shared wrapper instead of each getting
+    // its own.
+    final children = <Widget>[];
+    var currentGroup = <BibleVerseBlock>[];
+
+    void flushGroup() {
+      if (currentGroup.isEmpty) return;
+      final group = currentGroup;
+      currentGroup = [];
+      children.add(
+        KeyedSubtree(
+          key: _groupKeyFor(group),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                for (final block in group)
+                  _buildVerseSpan(block, textTheme, readerColors)
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (final block in _blocks) {
+      if (block is BibleHeadingBlock) {
+        flushGroup();
+        children.add(
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(block.text, style: textTheme.header),
-          )
-        else if (block is BibleVerseBlock)
-          KeyedSubtree(
-            key: _verseKeyFor(block),
-            child: Text.rich(_buildVerseSpan(block, textTheme, readerColors)),
           ),
-      if (widget.footer != null && widget.footer!.isNotEmpty) ...[
-        const SizedBox(height: 12),
-        Text(widget.footer!, style: textTheme.caption),
-      ],
-    ];
+        );
+      } else if (block is BibleVerseBlock) {
+        if (block.startsNewParagraph) flushGroup();
+        currentGroup.add(block);
+      }
+    }
+    flushGroup();
+
+    if (widget.footer != null && widget.footer!.isNotEmpty) {
+      children.add(const SizedBox(height: 12));
+      children.add(Text(widget.footer!, style: textTheme.caption));
+    }
 
     final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,

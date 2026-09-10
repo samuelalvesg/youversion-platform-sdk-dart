@@ -7,7 +7,7 @@ library;
 
 export 'src/l10n/youversion_ui_localizations.dart';
 export 'src/l10n/youversion_ui_strings.dart';
-export 'src/rendering/bible_text_node.dart' show extractVersePlainText;
+export 'src/rendering/bible_text_node.dart' show extractVersePlainText, splitPassageHtmlByVerse;
 export 'src/theme/bible_text_theme.dart';
 export 'src/theme/reader_color_scheme.dart';
 export 'src/theme/youversion_platform_theme.dart';

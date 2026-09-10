@@ -60,6 +60,64 @@ void main() {
     });
 
     test(
+        '2 verses sharing the same source paragraph both get flagged - startsNewParagraph [true, false]',
+        () {
+      // Real gap found 2026-09-10: paragraph-style Bible formatting runs
+      // several verses together in ONE <div>, not one per verse - this
+      // parser already separated them correctly into 2 blocks, but never
+      // recorded that they came from the same source paragraph.
+      const html = '<div class="p">'
+          '<span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text. '
+          '<span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.'
+          '</div>';
+
+      final blocks = parseBibleHtml(html).cast<BibleVerseBlock>();
+
+      expect(blocks.map((b) => b.startsNewParagraph), [true, false]);
+    });
+
+    test(
+        '2 verses in separate source paragraphs both start a new one - startsNewParagraph [true, true]',
+        () {
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text.
+        </div>
+        <div class="p">
+          <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.
+        </div>
+      ''';
+
+      final blocks = parseBibleHtml(html).cast<BibleVerseBlock>();
+
+      expect(blocks.map((b) => b.startsNewParagraph), [true, true]);
+    });
+
+    test('a verse right after a top-level heading starts a new paragraph', () {
+      // A heading is itself a top-level sibling (real shape, see "a
+      // heading between two verses" test below) - it occupies its own
+      // slot in `document.body.nodes`, so `topLevelIndex` moves past it
+      // even though headings don't touch `appendRun`/paragraph tracking
+      // directly - the verse right after it always compares against a
+      // DIFFERENT index than whatever verse preceded the heading.
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text.
+        </div>
+        <div class="s1">A Heading</div>
+        <div class="p">
+          <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.
+        </div>
+      ''';
+
+      final blocks = parseBibleHtml(html);
+      final verseBlocks = blocks.whereType<BibleVerseBlock>().toList();
+
+      expect(blocks.whereType<BibleHeadingBlock>(), hasLength(1));
+      expect(verseBlocks.map((b) => b.startsNewParagraph), [true, true]);
+    });
+
+    test(
         'a heading between two verses is its own block, not part of either verse',
         () {
       const html = '''
@@ -250,6 +308,94 @@ void main() {
       final wocIndex = blocks.single.runs.indexWhere((r) => r.isWordsOfChrist);
       final firstBreakIndex = blocks.single.runs.indexOf(lineBreaks.first);
       expect(firstBreakIndex, greaterThan(wocIndex));
+    });
+  });
+
+  group('splitPassageHtmlByVerse', () {
+    test(
+        'splits a single paragraph containing 2 verses (paragraph-style formatting)',
+        () {
+      // Real risk checked before trusting a simpler top-level-only split:
+      // some print Bibles (and nothing here rules it out for this API)
+      // run several verses together inside ONE paragraph, not one <div>
+      // per verse.
+      const html = '<div class="p">'
+          '<span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text. '
+          '<span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.'
+          '</div>';
+
+      final fragments = splitPassageHtmlByVerse(html);
+
+      expect(fragments.keys, {'1', '2'});
+      expect(extractVersePlainText(fragments['1']!, '1'), 'Verse one text.');
+      expect(extractVersePlainText(fragments['2']!, '2'), 'Verse two text.');
+    });
+
+    test(
+        'each fragment is independently re-parseable and matches parseBibleHtml on the full passage',
+        () {
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text.
+        </div>
+        <div class="p">
+          <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.
+        </div>
+      ''';
+
+      final fragments = splitPassageHtmlByVerse(html);
+      final fullBlocks = parseBibleHtml(html).cast<BibleVerseBlock>();
+
+      for (final block in fullBlocks) {
+        final fragmentText =
+            extractVersePlainText(fragments[block.number]!, block.number);
+        final fullText = extractVersePlainText(html, block.number);
+        expect(fragmentText, fullText);
+      }
+    });
+
+    test(
+        'a poetry line keeps its line-break class when fed back through BibleTextView\'s parser',
+        () {
+      const html = '<div class="q1">'
+          '<span class="yv-v" v="3"></span><span class="yv-vlbl">3</span>Line one'
+          '</div>'
+          '<div class="q2">Line two, same verse</div>';
+
+      final fragments = splitPassageHtmlByVerse(html);
+      final blocks = parseBibleHtml(fragments['3']!).cast<BibleVerseBlock>();
+
+      final lineBreaks = blocks.single.runs
+          .where((r) => r.lineBreakIndentLevel != null)
+          .toList();
+      expect(lineBreaks.map((r) => r.lineBreakIndentLevel), [1, 2]);
+    });
+
+    test(
+        'a section heading is dropped, not attached to the preceding or following verse',
+        () {
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Text before heading
+        </div>
+        <div class="s1">A Heading</div>
+        <div class="p">
+          <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Text after heading
+        </div>
+      ''';
+
+      final fragments = splitPassageHtmlByVerse(html);
+
+      expect(fragments['1'], isNot(contains('A Heading')));
+      expect(fragments['2'], isNot(contains('A Heading')));
+    });
+
+    test(
+        'content with no verse marker yet is dropped, not returned under an empty key',
+        () {
+      const html = '<div class="ip">Some intro text.</div>';
+
+      expect(splitPassageHtmlByVerse(html), isEmpty);
     });
   });
 }
