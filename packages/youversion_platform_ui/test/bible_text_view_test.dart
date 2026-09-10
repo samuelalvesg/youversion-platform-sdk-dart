@@ -5,7 +5,8 @@ import 'package:youversion_platform_core/youversion_platform_core.dart';
 import 'package:youversion_platform_ui/youversion_platform_ui.dart';
 
 void main() {
-  const content = '<div><div class="p"><span class="yv-v" v="16"></span><span class="yv-vlbl">16</span>'
+  const content =
+      '<div><div class="p"><span class="yv-v" v="16"></span><span class="yv-vlbl">16</span>'
       '<span class="wj">For God so loved the world</span><span class="yv-n f"><span class="ft">A note.</span></span>.'
       '</div></div>';
 
@@ -27,7 +28,8 @@ void main() {
     return result;
   }
 
-  testWidgets('tapping a verse calls onVerseTap with the full USFM id', (tester) async {
+  testWidgets('tapping a verse calls onVerseTap with the full USFM id',
+      (tester) async {
     String? tappedVerseId;
     await tester.pumpWidget(
       MaterialApp(
@@ -41,7 +43,8 @@ void main() {
       ),
     );
 
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     final recognizer = span.recognizer as TapGestureRecognizer;
     // Not `.onTap!()` directly - confirmed live, `RenderParagraph`'s own
     // semantics-tree assembly only supports Flutter's own recognizer
@@ -55,7 +58,8 @@ void main() {
     expect(tappedVerseId, 'JHN.3.16');
   });
 
-  testWidgets('long-pressing a verse calls onVerseLongPress, not onVerseTap', (tester) async {
+  testWidgets('long-pressing a verse calls onVerseLongPress, not onVerseTap',
+      (tester) async {
     String? tappedVerseId;
     String? longPressedVerseId;
     await tester.pumpWidget(
@@ -71,7 +75,8 @@ void main() {
       ),
     );
 
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     final recognizer = span.recognizer as TapGestureRecognizer;
     recognizer.onTapDown!(TapDownDetails());
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 1));
@@ -81,7 +86,9 @@ void main() {
     expect(tappedVerseId, isNull);
   });
 
-  testWidgets('right-clicking a verse calls onVerseLongPress, same as long-press', (tester) async {
+  testWidgets(
+      'right-clicking a verse calls onVerseLongPress, same as long-press',
+      (tester) async {
     String? tappedVerseId;
     String? longPressedVerseId;
     await tester.pumpWidget(
@@ -97,7 +104,8 @@ void main() {
       ),
     );
 
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     final recognizer = span.recognizer as TapGestureRecognizer;
     // Right mouse button - no long-press timing involved, fires
     // immediately via the same recognizer's `onSecondaryTapUp`.
@@ -107,7 +115,8 @@ void main() {
     expect(tappedVerseId, isNull);
   });
 
-  testWidgets('tapping a footnote marker calls onFootnoteTap, not onVerseTap', (tester) async {
+  testWidgets('tapping a footnote marker calls onFootnoteTap, not onVerseTap',
+      (tester) async {
     String? tappedFootnote;
     var verseTapped = false;
     await tester.pumpWidget(
@@ -123,23 +132,64 @@ void main() {
       ),
     );
 
-    final marker = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text == '*');
+    final marker =
+        flattenSpans(rootSpan(tester)).firstWhere((s) => s.text == '*');
     (marker.recognizer as TapGestureRecognizer).onTap!();
 
     expect(tappedFootnote, 'A note.');
     expect(verseTapped, isFalse);
   });
 
-  testWidgets('a footnote marker is inert when onFootnoteTap is null (backwards compatible default)', (
+  testWidgets(
+      'tapping a cross-reference marker calls onCrossReferenceTap with the referenceIds, not onFootnoteTap',
+      (tester) async {
+    const xrefContent =
+        '<div><div class="p"><span class="yv-v" v="3"></span><span class="yv-vlbl">3</span>'
+        'Blessed are the poor in spirit'
+        '<span class="yv-n x"><span class="ref" usfm="ISA.57.15">Isaiah 57:15</span></span>.'
+        '</div></div>';
+    String? footnoteTapped;
+    String? crossReferenceText;
+    List<String>? crossReferenceIds;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BibleTextView(
+            content: xrefContent,
+            chapterId: 'MAT.5',
+            onFootnoteTap: (text) => footnoteTapped = text,
+            onCrossReferenceTap: (text, ids) {
+              crossReferenceText = text;
+              crossReferenceIds = ids;
+            },
+          ),
+        ),
+      ),
+    );
+
+    final marker =
+        flattenSpans(rootSpan(tester)).firstWhere((s) => s.text == '*');
+    (marker.recognizer as TapGestureRecognizer).onTap!();
+
+    expect(crossReferenceText, 'Isaiah 57:15');
+    expect(crossReferenceIds, ['ISA.57.15']);
+    expect(footnoteTapped, isNull);
+  });
+
+  testWidgets(
+      'a footnote marker is inert when onFootnoteTap is null (backwards compatible default)',
+      (
     tester,
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: BibleTextView(content: content, chapterId: 'JHN.3')),
+        home:
+            Scaffold(body: BibleTextView(content: content, chapterId: 'JHN.3')),
       ),
     );
 
-    final marker = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text == '*');
+    final marker =
+        flattenSpans(rootSpan(tester)).firstWhere((s) => s.text == '*');
     expect(marker.recognizer, isNull);
   });
 
@@ -147,16 +197,21 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: BibleTextView(content: content, chapterId: 'JHN.3', selectedVerseIds: {'JHN.3.16'}),
+          body: BibleTextView(
+              content: content,
+              chapterId: 'JHN.3',
+              selectedVerseIds: {'JHN.3.16'}),
         ),
       ),
     );
 
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     expect(span.style?.decorationStyle, TextDecorationStyle.dashed);
   });
 
-  testWidgets('a verse with a saved highlight gets a colored background', (tester) async {
+  testWidgets('a verse with a saved highlight gets a colored background',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -169,11 +224,13 @@ void main() {
       ),
     );
 
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     expect(span.style?.background, isNotNull);
   });
 
-  testWidgets('words-of-Christ text uses ReaderColorScheme.wordsOfChrist', (tester) async {
+  testWidgets('words-of-Christ text uses ReaderColorScheme.wordsOfChrist',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -183,11 +240,14 @@ void main() {
     );
 
     final scheme = ReaderColorScheme.light(const ColorScheme.light());
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     expect(span.style?.color, scheme.wordsOfChrist);
   });
 
-  testWidgets('a footnote marker renders without leaking its body text into the visible content', (tester) async {
+  testWidgets(
+      'a footnote marker renders without leaking its body text into the visible content',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -196,22 +256,27 @@ void main() {
       ),
     );
 
-    final allText = flattenSpans(rootSpan(tester)).map((s) => s.text ?? '').join();
+    final allText =
+        flattenSpans(rootSpan(tester)).map((s) => s.text ?? '').join();
     expect(allText, isNot(contains('A note.')));
     expect(allText, contains('*'));
   });
 
-  testWidgets('a chapterId-less BibleTextView (e.g. BibleCard) never fires onVerseTap', (tester) async {
+  testWidgets(
+      'a chapterId-less BibleTextView (e.g. BibleCard) never fires onVerseTap',
+      (tester) async {
     var tapped = false;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: BibleTextView(content: content, onVerseTap: (_) => tapped = true),
+          body:
+              BibleTextView(content: content, onVerseTap: (_) => tapped = true),
         ),
       ),
     );
 
-    final span = flattenSpans(rootSpan(tester)).firstWhere((s) => s.text?.contains('loved') == true);
+    final span = flattenSpans(rootSpan(tester))
+        .firstWhere((s) => s.text?.contains('loved') == true);
     expect(span.recognizer, isNull);
     expect(tapped, isFalse);
   });

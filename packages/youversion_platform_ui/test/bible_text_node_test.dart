@@ -59,7 +59,9 @@ void main() {
       ]);
     });
 
-    test('a heading between two verses is its own block, not part of either verse', () {
+    test(
+        'a heading between two verses is its own block, not part of either verse',
+        () {
       const html = '''
         <div class="p">
           <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Text before heading
@@ -79,7 +81,9 @@ void main() {
       expect(blocks[2], isA<BibleVerseBlock>());
     });
 
-    test('ms1 (a numbered major-section heading) does not glue onto the preceding verse', () {
+    test(
+        'ms1 (a numbered major-section heading) does not glue onto the preceding verse',
+        () {
       // Real bug found live 2026-09-07 (Ephesians 1 FR/BDS): `ms1` fell
       // through into the preceding verse's text because `_headingClasses`
       // only had the unnumbered `ms`.
@@ -101,10 +105,13 @@ void main() {
       expect(blocks[1], isA<BibleHeadingBlock>());
       expect((blocks[1] as BibleHeadingBlock).text, 'Le salut en Christ');
       final verseThree = blocks[2] as BibleVerseBlock;
-      expect(verseThree.runs.map((r) => r.text).join().trim(), 'Verse three text.');
+      expect(verseThree.runs.map((r) => r.text).join().trim(),
+          'Verse three text.');
     });
 
-    test('any class carrying yv-h is treated as a heading, even one not explicitly listed', () {
+    test(
+        'any class carrying yv-h is treated as a heading, even one not explicitly listed',
+        () {
       // `yv-h` is the primary signal (see `_isHeadingElement`'s doc
       // comment) precisely so a USFM marker never seen before (here
       // `sd1`, a semantic division heading - deliberately NOT in
@@ -121,7 +128,8 @@ void main() {
 
       expect(blocks, hasLength(2));
       expect(blocks[1], isA<BibleHeadingBlock>());
-      expect((blocks[1] as BibleHeadingBlock).text, 'An Unlisted Heading Marker');
+      expect(
+          (blocks[1] as BibleHeadingBlock).text, 'An Unlisted Heading Marker');
     });
 
     test('marks text inside a .wj span as words of Christ', () {
@@ -133,13 +141,17 @@ void main() {
 
       final blocks = parseBibleHtml(html).cast<BibleVerseBlock>();
 
-      final wocRun = blocks.single.runs.firstWhere((r) => r.text.contains('Jesus said'));
+      final wocRun =
+          blocks.single.runs.firstWhere((r) => r.text.contains('Jesus said'));
       expect(wocRun.isWordsOfChrist, isTrue);
-      final plainRun = blocks.single.runs.firstWhere((r) => r.text.contains('this.'));
+      final plainRun =
+          blocks.single.runs.firstWhere((r) => r.text.contains('this.'));
       expect(plainRun.isWordsOfChrist, isFalse);
     });
 
-    test('extracts footnote body text from a .yv-n.f marker, without emitting visible text for it', () {
+    test(
+        'extracts footnote body text from a .yv-n.f marker, without emitting visible text for it',
+        () {
       const html = '''
         <div class="p">
           <span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse text<span class="yv-n f"><span class="ft">Verse note</span></span>.
@@ -148,19 +160,29 @@ void main() {
 
       final blocks = parseBibleHtml(html).cast<BibleVerseBlock>();
 
-      final footnoteRun = blocks.single.runs.firstWhere((r) => r.footnoteText != null);
+      final footnoteRun =
+          blocks.single.runs.firstWhere((r) => r.footnoteText != null);
       expect(footnoteRun.footnoteText, 'Verse note');
       expect(footnoteRun.text, isEmpty);
-      expect(blocks.single.runs.map((r) => r.text).join(), isNot(contains('Verse note')));
+      expect(blocks.single.runs.map((r) => r.text).join(),
+          isNot(contains('Verse note')));
+      // Distinção real de f vs x: um .yv-n.f (footnote) nunca é marcado
+      // como cross-reference, e nunca tem ids de referência (não tem
+      // nenhum .ref aninhado pra extrair).
+      expect(footnoteRun.isCrossReference, isFalse);
+      expect(footnoteRun.crossReferenceIds, isEmpty);
     });
 
-    test('groups text with no preceding verse marker under an empty-number block', () {
+    test(
+        'groups text with no preceding verse marker under an empty-number block',
+        () {
       const html = '<div class="ip">Some intro text.</div>';
 
       final blocks = parseBibleHtml(html).cast<BibleVerseBlock>();
 
       expect(blocks.single.number, isEmpty);
-      expect(blocks.single.runs.map((r) => r.text).join().trim(), 'Some intro text.');
+      expect(blocks.single.runs.map((r) => r.text).join().trim(),
+          'Some intro text.');
     });
   });
 
@@ -170,7 +192,8 @@ void main() {
     // fixtures, to close the loop on whether the react SDK's transformer
     // test fixtures actually match what the live API sends.
     test('a single verse (John 3:1)', () {
-      const content = '<div><div class="p"><span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>'
+      const content =
+          '<div><div class="p"><span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>'
           'Now there was a man of the Pharisees named Nicodemus, a ruler of the Jews. </div></div>';
 
       final blocks = parseBibleHtml(content).cast<BibleVerseBlock>();
@@ -199,17 +222,30 @@ void main() {
       // no second .yv-v marker appears, so the verse number "sticks".
       expect(blocks, hasLength(1));
       expect(blocks.single.number, '3');
-      final wocText = blocks.single.runs.where((r) => r.isWordsOfChrist).map((r) => r.text).join();
-      expect(wocText, '“Blessed are the poor in spirit,for theirs is the Kingdom of Heaven.');
+      final wocText = blocks.single.runs
+          .where((r) => r.isWordsOfChrist)
+          .map((r) => r.text)
+          .join();
+      expect(wocText,
+          '“Blessed are the poor in spirit,for theirs is the Kingdom of Heaven.');
       // .yv-n.x has no nested .ft (unlike .yv-n.f) - falls back to the
       // marker's own text, picking up both cross-references.
-      final noteRun = blocks.single.runs.firstWhere((r) => r.footnoteText != null);
+      final noteRun =
+          blocks.single.runs.firstWhere((r) => r.footnoteText != null);
       expect(noteRun.footnoteText, 'Isaiah 57:15; 66:2');
+      // Real change: a .yv-n.x is now flagged (isCrossReference) and its
+      // nested .ref spans' usfm attributes are parsed out structured -
+      // callers no longer need to parse "Isaiah 57:15; 66:2" back into a
+      // reference themselves.
+      expect(noteRun.isCrossReference, isTrue);
+      expect(noteRun.crossReferenceIds, ['ISA.57.15', 'ISA.66.2']);
       // Two poetry lines (.q1 then .q2) -> one line-break run trailing
       // each line (a break is emitted once the line it belongs to is
       // fully processed, not before - a leading break for .q1 would
       // misattribute it to whatever verse preceded this one).
-      final lineBreaks = blocks.single.runs.where((r) => r.lineBreakIndentLevel != null).toList();
+      final lineBreaks = blocks.single.runs
+          .where((r) => r.lineBreakIndentLevel != null)
+          .toList();
       expect(lineBreaks.map((r) => r.lineBreakIndentLevel), [1, 2]);
       final wocIndex = blocks.single.runs.indexWhere((r) => r.isWordsOfChrist);
       final firstBreakIndex = blocks.single.runs.indexOf(lineBreaks.first);

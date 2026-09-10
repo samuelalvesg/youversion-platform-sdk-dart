@@ -41,6 +41,8 @@ class BibleTextRun {
     required this.text,
     this.isWordsOfChrist = false,
     this.footnoteText,
+    this.isCrossReference = false,
+    this.crossReferenceIds = const [],
     this.lineBreakIndentLevel,
   });
 
@@ -49,9 +51,25 @@ class BibleTextRun {
   /// From YouVersion's `.wj` class ("words of Jesus"/red-letter).
   final bool isWordsOfChrist;
 
-  /// Footnote body text, from YouVersion's `.yv-n.f` marker (footnote body
-  /// nested in a `.ft` span) - `null` for a plain text run.
+  /// Footnote/cross-reference body text, from YouVersion's `.yv-n.f`
+  /// (footnote) or `.yv-n.x` (cross-reference) marker - body text nested in
+  /// a `.ft` span when present, else the marker's own text (a `.yv-n.x` has
+  /// no `.ft`, see [crossReferenceIds]'s doc comment). `null` for a plain
+  /// text run.
   final String? footnoteText;
+
+  /// `true` for a `.yv-n.x` (cross-reference) marker, `false` for a plain
+  /// `.yv-n.f` (footnote) marker or any other run. Lets a caller offer
+  /// "go to" navigation only for a real cross-reference, not a footnote.
+  final bool isCrossReference;
+
+  /// USFM ids (e.g. `"ISA.57.15"`) of every reference target inside a
+  /// `.yv-n.x` marker - from each nested `<span class="ref" usfm="...">`'s
+  /// `usfm` attribute, in document order. Always empty for [footnoteText]
+  /// runs where [isCrossReference] is `false`. YouVersion's passage HTML
+  /// already provides these structured (no need to parse a reference like
+  /// `"Isaiah 57:15"` back out of [footnoteText] itself).
+  final List<String> crossReferenceIds;
 
   /// Non-`null` marks "start a new poetry line here, indented to this
   /// level" - from YouVersion's USFM poetry classes (`.q1`-`.q4`, `.qc`/
@@ -77,7 +95,19 @@ class BibleTextRun {
 /// counterpart to `r`) are all real USFM markers - added here the same
 /// way `s1`/`s2` already were, rather than leaving only the unnumbered
 /// `ms` covered.
-const _headingClasses = {'s1', 's2', 'ms', 'ms1', 'ms2', 'ms3', 'ms4', 'mr', 'sp', 'sr', 'r'};
+const _headingClasses = {
+  's1',
+  's2',
+  'ms',
+  'ms1',
+  'ms2',
+  'ms3',
+  'ms4',
+  'mr',
+  'sp',
+  'sr',
+  'r'
+};
 
 /// True for any element YouVersion's passage HTML marks as a heading -
 /// primarily via the generic `yv-h` class (confirmed present on every
@@ -92,14 +122,22 @@ const _headingClasses = {'s1', 's2', 'ms', 'ms1', 'ms2', 'ms3', 'ms4', 'mr', 'sp
 /// see [_headingClasses]'s own doc comment) is still caught automatically,
 /// instead of leaking into whatever verse happens to be open when the
 /// next as-yet-unlisted class shows up.
-bool _isHeadingElement(dom.Element node) => node.classes.contains('yv-h') || node.classes.any(_headingClasses.contains);
+bool _isHeadingElement(dom.Element node) =>
+    node.classes.contains('yv-h') || node.classes.any(_headingClasses.contains);
 
 /// USFM poetry-line classes YouVersion's passage HTML uses, mapped to an
 /// indent level. `qc` (centered) and `qs` (selah) don't have a real
 /// centered/selah rendering here - collapsed to level 0, still a line
 /// break (a documented simplification, same spirit as this package's
 /// "not a general HTML engine" scope elsewhere).
-const _poetryIndentLevels = {'q1': 1, 'q2': 2, 'q3': 3, 'q4': 4, 'qc': 0, 'qs': 0};
+const _poetryIndentLevels = {
+  'q1': 1,
+  'q2': 2,
+  'q3': 3,
+  'q4': 4,
+  'qc': 0,
+  'qs': 0
+};
 
 /// Parses YouVersion's passage HTML (`BiblePassage.content`, "YVDOM") into
 /// an ordered list of [BibleTextBlock]s.
@@ -136,7 +174,8 @@ List<BibleTextBlock> parseBibleHtml(String html) {
       // source HTML is indented for readability) - real content always
       // has non-whitespace, so this never drops an intentional blank run.
       if (node.text.trim().isNotEmpty) {
-        appendRun(BibleTextRun(text: node.text, isWordsOfChrist: inWordsOfChrist));
+        appendRun(
+            BibleTextRun(text: node.text, isWordsOfChrist: inWordsOfChrist));
       }
       return;
     }
@@ -160,14 +199,36 @@ List<BibleTextBlock> parseBibleHtml(String html) {
       // `BibleVerseBlock.number` instead, so its text is dropped here.
       return;
     }
-    if (classes.contains('yv-n') && (classes.contains('f') || classes.contains('x'))) {
-      final footnoteText = node.querySelector('.ft')?.text.trim() ?? node.text.trim();
+    if (classes.contains('yv-n') &&
+        (classes.contains('f') || classes.contains('x'))) {
+      final isCrossReference = classes.contains('x');
+      final footnoteText =
+          node.querySelector('.ft')?.text.trim() ?? node.text.trim();
       if (footnoteText.isNotEmpty) {
-        appendRun(BibleTextRun(text: '', footnoteText: footnoteText));
+        // `.yv-n.x` (cross-reference) nests one `<span class="ref"
+        // usfm="...">` per target reference - `.yv-n.f` (footnote) has no
+        // such structure, so this is always empty for a plain footnote.
+        final crossReferenceIds = isCrossReference
+            ? node
+                .querySelectorAll('.ref')
+                .map((e) => e.attributes['usfm'])
+                .whereType<String>()
+                .toList()
+            : const <String>[];
+        appendRun(
+          BibleTextRun(
+            text: '',
+            footnoteText: footnoteText,
+            isCrossReference: isCrossReference,
+            crossReferenceIds: crossReferenceIds,
+          ),
+        );
       }
       return;
     }
-    final poetryClass = classes.firstWhere((c) => _poetryIndentLevels.containsKey(c), orElse: () => '');
+    final poetryClass = classes.firstWhere(
+        (c) => _poetryIndentLevels.containsKey(c),
+        orElse: () => '');
     if (poetryClass.isNotEmpty) {
       // Emit the line break *after* this line's own content (not before) -
       // a poetry line's own verse marker (if any) lives inside it, so the
@@ -176,7 +237,8 @@ List<BibleTextBlock> parseBibleHtml(String html) {
       for (final child in node.nodes) {
         walk(child, inWordsOfChrist: inWordsOfChrist);
       }
-      appendRun(BibleTextRun(text: '', lineBreakIndentLevel: _poetryIndentLevels[poetryClass]));
+      appendRun(BibleTextRun(
+          text: '', lineBreakIndentLevel: _poetryIndentLevels[poetryClass]));
       return;
     }
     final woc = inWordsOfChrist || classes.contains('wj');
@@ -226,7 +288,10 @@ List<BibleTextBlock> parseBibleHtml(String html) {
 /// already has [content] rendered via [parseBibleHtml] for display, this
 /// is the same parse used to get one verse's text back out as a string.
 String? extractVersePlainText(String html, String verseNumber) {
-  final block = parseBibleHtml(html).whereType<BibleVerseBlock>().where((b) => b.number == verseNumber).firstOrNull;
+  final block = parseBibleHtml(html)
+      .whereType<BibleVerseBlock>()
+      .where((b) => b.number == verseNumber)
+      .firstOrNull;
   if (block == null) return null;
 
   final buffer = StringBuffer();
@@ -234,7 +299,8 @@ String? extractVersePlainText(String html, String verseNumber) {
     if (run.lineBreakIndentLevel != null) {
       buffer.writeln();
     } else if (run.text.isNotEmpty) {
-      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) buffer.write(' ');
+      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n'))
+        buffer.write(' ');
       buffer.write(run.text.trim());
     }
   }

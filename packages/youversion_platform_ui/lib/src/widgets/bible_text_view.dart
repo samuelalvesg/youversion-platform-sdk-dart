@@ -41,6 +41,7 @@ class BibleTextView extends StatefulWidget {
     this.onVerseTap,
     this.onVerseLongPress,
     this.onFootnoteTap,
+    this.onCrossReferenceTap,
     this.scrollToVerseId,
   });
 
@@ -114,6 +115,18 @@ class BibleTextView extends StatefulWidget {
   /// backwards-compatible with existing callers).
   final ValueChanged<String>? onFootnoteTap;
 
+  /// Called instead of [onFootnoteTap] when a `.yv-n.x` cross-reference
+  /// marker (`*`) is tapped, with the marker's body text plus the USFM id
+  /// of every reference target it links to (`BibleTextRun.crossReferenceIds`,
+  /// e.g. `["ISA.57.15", "ISA.66.2"]` - already parsed out of YouVersion's
+  /// passage HTML, no reference-string parsing needed) - lets a caller
+  /// offer "go to" navigation for a cross-reference specifically, not just
+  /// show its text like a footnote. `null` (the default) falls back to
+  /// [onFootnoteTap] for cross-references too, same behavior as before this
+  /// callback existed - backwards-compatible with existing callers.
+  final void Function(String text, List<String> referenceIds)?
+      onCrossReferenceTap;
+
   /// Full USFM verse id to scroll into view once, right after this
   /// content first renders (e.g. opening a chapter already focused on a
   /// specific verse, matching how [selectedVerseId] would draw it).
@@ -158,7 +171,8 @@ class _BibleTextViewState extends State<BibleTextView> {
     if (widget.content != oldWidget.content) {
       _blocks = parseBibleHtml(widget.content);
     }
-    if (widget.scrollToVerseId != null && widget.scrollToVerseId != oldWidget.scrollToVerseId) {
+    if (widget.scrollToVerseId != null &&
+        widget.scrollToVerseId != oldWidget.scrollToVerseId) {
       _scheduleScroll();
     }
   }
@@ -177,12 +191,15 @@ class _BibleTextViewState extends State<BibleTextView> {
       Scrollable.ensureVisible(
         context,
         alignment: 0.3,
-        duration: MediaQuery.of(context).disableAnimations ? Duration.zero : const Duration(milliseconds: 400),
+        duration: MediaQuery.of(context).disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 400),
       );
     });
   }
 
-  GlobalKey _keyFor(String verseId) => _verseKeys.putIfAbsent(verseId, GlobalKey.new);
+  GlobalKey _keyFor(String verseId) =>
+      _verseKeys.putIfAbsent(verseId, GlobalKey.new);
 
   /// The scrollable target for [scrollToVerseId] needs a stable
   /// [GlobalKey] per verse; blocks with no derivable verse id (no
@@ -190,7 +207,9 @@ class _BibleTextViewState extends State<BibleTextView> {
   /// nothing ever scrolls to those anyway.
   Key _verseKeyFor(BibleVerseBlock block) {
     final chapterId = widget.chapterId;
-    final verseId = (chapterId == null || block.number.isEmpty) ? null : '$chapterId.${block.number}';
+    final verseId = (chapterId == null || block.number.isEmpty)
+        ? null
+        : '$chapterId.${block.number}';
     return verseId == null ? ValueKey(block) : _keyFor(verseId);
   }
 
@@ -210,20 +229,38 @@ class _BibleTextViewState extends State<BibleTextView> {
   }
 
   GestureRecognizer? _recognizerFor(String? verseId) {
-    if (verseId == null || (widget.onVerseTap == null && widget.onVerseLongPress == null)) return null;
+    if (verseId == null ||
+        (widget.onVerseTap == null && widget.onVerseLongPress == null))
+      return null;
     final recognizer = verseTapLongPressRecognizer(
-      onTap: widget.onVerseTap == null ? null : () => widget.onVerseTap!(verseId),
-      onLongPress: widget.onVerseLongPress == null ? null : () => widget.onVerseLongPress!(verseId),
+      onTap:
+          widget.onVerseTap == null ? null : () => widget.onVerseTap!(verseId),
+      onLongPress: widget.onVerseLongPress == null
+          ? null
+          : () => widget.onVerseLongPress!(verseId),
     );
     _recognizers.add(recognizer);
     return recognizer;
   }
 
-  /// Separate from [_recognizerFor] - tapping a footnote marker opens the
-  /// footnote, it doesn't also select the verse.
-  TapGestureRecognizer? _footnoteRecognizerFor(String footnoteText) {
+  /// Separate from [_recognizerFor] - tapping a footnote/cross-reference
+  /// marker opens it, it doesn't also select the verse. A cross-reference
+  /// run ([BibleTextRun.isCrossReference]) prefers [BibleTextView.onCrossReferenceTap]
+  /// when set, falling back to [BibleTextView.onFootnoteTap] otherwise -
+  /// same as a plain footnote run always does.
+  TapGestureRecognizer? _footnoteRecognizerFor(BibleTextRun run) {
+    final footnoteText = run.footnoteText!;
+    if (run.isCrossReference && widget.onCrossReferenceTap != null) {
+      final onCrossReferenceTap = widget.onCrossReferenceTap!;
+      final recognizer = TapGestureRecognizer()
+        ..onTap =
+            () => onCrossReferenceTap(footnoteText, run.crossReferenceIds);
+      _recognizers.add(recognizer);
+      return recognizer;
+    }
     if (widget.onFootnoteTap == null) return null;
-    final recognizer = TapGestureRecognizer()..onTap = () => widget.onFootnoteTap!(footnoteText);
+    final recognizer = TapGestureRecognizer()
+      ..onTap = () => widget.onFootnoteTap!(footnoteText);
     _recognizers.add(recognizer);
     return recognizer;
   }
@@ -253,30 +290,41 @@ class _BibleTextViewState extends State<BibleTextView> {
       ],
     ];
 
-    final content =
-        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: children);
+    final content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: children);
 
     return Directionality(
-      textDirection: widget.isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
+      textDirection:
+          widget.isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
       child: content,
     );
   }
 
-  InlineSpan _buildVerseSpan(BibleVerseBlock block, BibleTextTheme textTheme, ReaderColorScheme readerColors) {
+  InlineSpan _buildVerseSpan(BibleVerseBlock block, BibleTextTheme textTheme,
+      ReaderColorScheme readerColors) {
     final chapterId = widget.chapterId;
-    final verseId = (chapterId == null || block.number.isEmpty) ? null : '$chapterId.${block.number}';
-    final highlightHex = verseId == null ? null : widget.highlightsByVerseId[verseId];
-    final isSelected = verseId != null && widget.selectedVerseIds.contains(verseId);
+    final verseId = (chapterId == null || block.number.isEmpty)
+        ? null
+        : '$chapterId.${block.number}';
+    final highlightHex =
+        verseId == null ? null : widget.highlightsByVerseId[verseId];
+    final isSelected =
+        verseId != null && widget.selectedVerseIds.contains(verseId);
     final recognizer = _recognizerFor(verseId);
 
     var baseStyle = textTheme.scriptureM;
     if (highlightHex != null) {
       final color = Color(int.parse('FF$highlightHex', radix: 16));
-      baseStyle = baseStyle.copyWith(background: Paint()..color = readerColors.highlightOverlay(color));
+      baseStyle = baseStyle.copyWith(
+          background: Paint()..color = readerColors.highlightOverlay(color));
     }
     if (isSelected) {
       baseStyle = baseStyle.copyWith(
-        background: highlightHex == null ? (Paint()..color = readerColors.highlightBorder) : baseStyle.background,
+        background: highlightHex == null
+            ? (Paint()..color = readerColors.highlightBorder)
+            : baseStyle.background,
         decoration: TextDecoration.underline,
         decorationStyle: TextDecorationStyle.dashed,
         decorationColor: readerColors.highlightBorder,
@@ -288,29 +336,36 @@ class _BibleTextViewState extends State<BibleTextView> {
         TextSpan(
           text: '${block.number} ',
           style: baseStyle.copyWith(
-              fontSize: (baseStyle.fontSize ?? 15) * 0.6, color: baseStyle.color?.withValues(alpha: 0.6)),
+              fontSize: (baseStyle.fontSize ?? 15) * 0.6,
+              color: baseStyle.color?.withValues(alpha: 0.6)),
           recognizer: recognizer,
         ),
       for (final run in block.runs)
         if (run.lineBreakIndentLevel != null)
-          TextSpan(text: '\n${'  ' * run.lineBreakIndentLevel!}', style: baseStyle)
+          TextSpan(
+              text: '\n${'  ' * run.lineBreakIndentLevel!}', style: baseStyle)
         else if (run.footnoteText != null)
           TextSpan(
             text: '*',
-            style: baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 15) * 0.8),
-            recognizer: _footnoteRecognizerFor(run.footnoteText!),
+            style:
+                baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 15) * 0.8),
+            recognizer: _footnoteRecognizerFor(run),
           )
         else if (widget.initBold)
           ..._initBoldSpans(
             run.text,
-            run.isWordsOfChrist ? baseStyle.copyWith(color: readerColors.wordsOfChrist) : baseStyle,
+            run.isWordsOfChrist
+                ? baseStyle.copyWith(color: readerColors.wordsOfChrist)
+                : baseStyle,
             recognizer,
             widget.initBoldFraction,
           )
         else
           TextSpan(
             text: run.text,
-            style: run.isWordsOfChrist ? baseStyle.copyWith(color: readerColors.wordsOfChrist) : baseStyle,
+            style: run.isWordsOfChrist
+                ? baseStyle.copyWith(color: readerColors.wordsOfChrist)
+                : baseStyle,
             recognizer: recognizer,
           ),
     ];
@@ -350,13 +405,21 @@ class _BibleTextViewState extends State<BibleTextView> {
     for (final match in RegExp(r'\s+|\S+').allMatches(text)) {
       final token = match.group(0)!;
       if (token.trim().isEmpty) {
-        spans.add(TextSpan(text: token, style: baseStyle, recognizer: recognizer));
+        spans.add(
+            TextSpan(text: token, style: baseStyle, recognizer: recognizer));
         continue;
       }
-      final boldLength = (token.length * boldFraction).ceil().clamp(1, token.length);
-      spans.add(TextSpan(text: token.substring(0, boldLength), style: boldStyle, recognizer: recognizer));
+      final boldLength =
+          (token.length * boldFraction).ceil().clamp(1, token.length);
+      spans.add(TextSpan(
+          text: token.substring(0, boldLength),
+          style: boldStyle,
+          recognizer: recognizer));
       if (boldLength < token.length) {
-        spans.add(TextSpan(text: token.substring(boldLength), style: thinStyle, recognizer: recognizer));
+        spans.add(TextSpan(
+            text: token.substring(boldLength),
+            style: thinStyle,
+            recognizer: recognizer));
       }
     }
     return spans;
