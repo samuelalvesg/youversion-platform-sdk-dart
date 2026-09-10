@@ -193,6 +193,38 @@ void main() {
     expect(marker.recognizer, isNull);
   });
 
+  testWidgets(
+      'a verse in notedVerseIds shows a note marker, one not in it does not',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: BibleTextView(
+            content: content,
+            chapterId: 'JHN.3',
+            notedVerseIds: {'JHN.3.16'},
+          ),
+        ),
+      ),
+    );
+
+    final spans = flattenSpans(rootSpan(tester));
+    expect(spans.any((s) => s.text == '📝 '), isTrue);
+  });
+
+  testWidgets('no note marker when notedVerseIds is empty (default)',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home:
+            Scaffold(body: BibleTextView(content: content, chapterId: 'JHN.3')),
+      ),
+    );
+
+    final spans = flattenSpans(rootSpan(tester));
+    expect(spans.any((s) => s.text == '📝 '), isFalse);
+  });
+
   testWidgets('selected verse gets a dashed underline', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

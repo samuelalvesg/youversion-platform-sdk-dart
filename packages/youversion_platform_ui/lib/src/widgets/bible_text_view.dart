@@ -35,6 +35,7 @@ class BibleTextView extends StatefulWidget {
     this.footer,
     this.selectedVerseIds = const {},
     this.highlightsByVerseId = const {},
+    this.notedVerseIds = const {},
     this.isRightToLeft = false,
     this.initBold = false,
     this.initBoldFraction = 1 / 3,
@@ -71,6 +72,15 @@ class BibleTextView extends StatefulWidget {
   /// Saved highlight color (hex, from `HighlightColors`) per full USFM
   /// verse id - drawn as that verse's text background.
   final Map<String, String> highlightsByVerseId;
+
+  /// Full USFM ids (e.g. `"JHN.3.16"`) of every verse with a caller-side
+  /// note attached (this package has no note storage/model of its own -
+  /// a host app tracks that itself, same "don't bundle a storage engine"
+  /// principle as [YouVersionReaderStorage]). Each one gets a small
+  /// marker glyph drawn right after its verse number - purely visual, no
+  /// tap target of its own (tapping/long-pressing the verse itself
+  /// already reaches it via [onVerseTap]/[onVerseLongPress]).
+  final Set<String> notedVerseIds;
 
   /// From `Bible.isRightToLeft` - wraps the content in the matching
   /// [Directionality] (this widget's own text layout only; chapter
@@ -331,6 +341,8 @@ class _BibleTextViewState extends State<BibleTextView> {
       );
     }
 
+    final isNoted = verseId != null && widget.notedVerseIds.contains(verseId);
+
     final spans = <InlineSpan>[
       if (block.number.isNotEmpty)
         TextSpan(
@@ -338,6 +350,14 @@ class _BibleTextViewState extends State<BibleTextView> {
           style: baseStyle.copyWith(
               fontSize: (baseStyle.fontSize ?? 15) * 0.6,
               color: baseStyle.color?.withValues(alpha: 0.6)),
+          recognizer: recognizer,
+        ),
+      // Puramente visual - sem `recognizer` próprio (ver doc comment de
+      // `notedVerseIds`), só desenha logo depois do número do versículo.
+      if (isNoted)
+        TextSpan(
+          text: '📝 ',
+          style: baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 15) * 0.7),
           recognizer: recognizer,
         ),
       for (final run in block.runs)
