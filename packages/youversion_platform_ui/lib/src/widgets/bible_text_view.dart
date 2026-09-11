@@ -248,7 +248,21 @@ class _BibleTextViewState extends State<BibleTextView> {
   /// line. Every verse id in [group] is registered against the SAME key.
   /// A group with no derivable verse id at all (no [chapterId]) falls
   /// back to an ordinary key - nothing ever scrolls to those anyway.
-  Key _groupKeyFor(List<BibleVerseBlock> group) {
+  ///
+  /// [keysUsedThisBuild] is a real safety net, not just belt-and-braces:
+  /// a live "Duplicate GlobalKey" crash (reported 2026-09-10/11, normal
+  /// single-view use, `groupParagraphs: true`) proved `_verseKeys` can
+  /// hand back a [GlobalKey] already claimed by an EARLIER group in the
+  /// very same [build] call - the exact real-API HTML shape that
+  /// triggers it isn't pinned down yet (this parser has no captured
+  /// fixture, see [parseBibleHtml]'s own doc comment), but a duplicate
+  /// [GlobalKey] is always a crash regardless of cause, so this method
+  /// refuses to ever hand one out twice in one build - falling back to
+  /// an ordinary (non-global) key for the second-and-later claimant
+  /// instead of crashing. Costs that one group its stable
+  /// [scrollToVerseId] target for this build; a real trade worth making
+  /// over an unhandled exception.
+  Key _groupKeyFor(List<BibleVerseBlock> group, Set<Key> keysUsedThisBuild) {
     final chapterId = widget.chapterId;
     GlobalKey? sharedKey;
     for (final block in group) {
@@ -257,7 +271,9 @@ class _BibleTextViewState extends State<BibleTextView> {
       sharedKey ??= _keyFor(verseId);
       _verseKeys[verseId] = sharedKey;
     }
-    return sharedKey ?? ValueKey(group);
+    final key = sharedKey ?? ValueKey(group);
+    if (!keysUsedThisBuild.add(key)) return ValueKey(group);
+    return key;
   }
 
   @override
@@ -329,6 +345,9 @@ class _BibleTextViewState extends State<BibleTextView> {
     // its own.
     final children = <Widget>[];
     var currentGroup = <BibleVerseBlock>[];
+    // See `_groupKeyFor`'s own doc comment on why this exists - a real
+    // "Duplicate GlobalKey" crash, not a hypothetical.
+    final keysUsedThisBuild = <Key>{};
 
     void flushGroup() {
       if (currentGroup.isEmpty) return;
@@ -336,7 +355,7 @@ class _BibleTextViewState extends State<BibleTextView> {
       currentGroup = [];
       children.add(
         KeyedSubtree(
-          key: _groupKeyFor(group),
+          key: _groupKeyFor(group, keysUsedThisBuild),
           child: Text.rich(
             TextSpan(
               children: [
