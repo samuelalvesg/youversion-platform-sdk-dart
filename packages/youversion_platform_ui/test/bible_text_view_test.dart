@@ -361,4 +361,30 @@ void main() {
 
     expect(find.byType(RichText), findsNWidgets(2));
   });
+
+  testWidgets(
+      'groupParagraphs: false renders one RichText per verse even when they '
+      'share a source paragraph', (tester) async {
+    // Safety toggle added live 2026-09-10 alongside a "Duplicate GlobalKey"
+    // crash report in normal single-view use - see the field's own doc
+    // comment on `BibleTextView.groupParagraphs`. This confirms the
+    // toggle actually bypasses grouping, matching pre-grouping behavior.
+    const paragraphContent = '<div class="p">'
+        '<span class="yv-v" v="1"></span><span class="yv-vlbl">1</span>Verse one text. '
+        '<span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.'
+        '</div>';
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: BibleTextView(
+            content: paragraphContent,
+            chapterId: 'JHN.3',
+            groupParagraphs: false,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(RichText), findsNWidgets(2));
+  });
 }

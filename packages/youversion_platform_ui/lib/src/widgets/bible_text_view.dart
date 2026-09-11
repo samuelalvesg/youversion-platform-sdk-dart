@@ -44,6 +44,7 @@ class BibleTextView extends StatefulWidget {
     this.onFootnoteTap,
     this.onCrossReferenceTap,
     this.scrollToVerseId,
+    this.groupParagraphs = true,
   });
 
   /// Raw passage HTML, as returned by `YouVersionContentClient.getPassage`.
@@ -143,6 +144,29 @@ class BibleTextView extends StatefulWidget {
   /// Re-fires on change (a new value scrolls again), but does nothing
   /// once `null`. No-op for a verse id not present in [content].
   final String? scrollToVerseId;
+
+  /// `true` (default) flows verses sharing a source paragraph together
+  /// (see [BibleVerseBlock.startsNewParagraph]) into one shared
+  /// `Text.rich`, instead of one verse per line. `false` renders every
+  /// verse in its own line/widget regardless of what [parseBibleHtml]
+  /// detected - the pre-2026-09-10 behavior.
+  ///
+  /// Safety toggle added the same day the grouping shipped: a live bug
+  /// ("Duplicate GlobalKey" crash, reported in normal single-view use,
+  /// no parallel/multi-column mode involved) surfaced that this
+  /// package's paragraph-boundary detection (`topLevelIndex` in
+  /// `parseBibleHtml`, keyed off `document.body.nodes`' TOP-LEVEL
+  /// iteration only) can misfire against real API HTML shapes this
+  /// package has no captured fixture for yet (this package's own doc
+  /// comment on [parseBibleHtml] already flags that gap) - e.g. a
+  /// passage wrapped in a single outer container element would make
+  /// EVERY verse in the whole passage look like one giant shared
+  /// paragraph to that counter, which can in turn make 2 unrelated
+  /// paragraph groups compute the SAME verse-keyed `GlobalKey`. Set to
+  /// `false` to fall back to the known-safe one-verse-per-line rendering
+  /// immediately without waiting for that detection bug to be properly
+  /// root-caused against real captured HTML.
+  final bool groupParagraphs;
 
   @override
   State<BibleTextView> createState() => _BibleTextViewState();
@@ -335,7 +359,12 @@ class _BibleTextViewState extends State<BibleTextView> {
           ),
         );
       } else if (block is BibleVerseBlock) {
-        if (block.startsNewParagraph) flushGroup();
+        // `!widget.groupParagraphs` treats every verse as starting its
+        // own paragraph regardless of what `parseBibleHtml` detected -
+        // see the field's own doc comment for why this exists.
+        if (!widget.groupParagraphs || block.startsNewParagraph) {
+          flushGroup();
+        }
         currentGroup.add(block);
       }
     }
