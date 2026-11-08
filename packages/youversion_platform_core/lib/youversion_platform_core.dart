@@ -1,7 +1,7 @@
 /// Unofficial Dart client for the YouVersion Platform APIs (core/protocol,
 /// no UI): Content (Bibles), Sign-In (OAuth PKCE), Data Exchange
 /// (highlights via consent), Highlights (direct CRUD), Languages,
-/// Organizations, and VOTD (Verse of the Day).
+/// Organizations, Search, Images, and VOTD (Verse of the Day).
 ///
 /// Equivalent to the `platform-core` module of the official SDKs (Kotlin,
 /// Swift, React, React Native/Expo) - without their `platform-ui`/
@@ -25,10 +25,14 @@ export 'src/highlights/models/highlight.dart';
 export 'src/http/youversion_exception.dart';
 export 'src/http/youversion_http_client.dart';
 export 'src/http/youversion_sdk_headers.dart';
+export 'src/images/api/youversion_images_client.dart';
+export 'src/images/models/verse_image.dart';
 export 'src/languages/api/youversion_languages_client.dart';
 export 'src/languages/models/language.dart';
 export 'src/organizations/api/youversion_organizations_client.dart';
 export 'src/organizations/models/organization.dart';
+export 'src/search/api/youversion_search_client.dart';
+export 'src/search/models/search_models.dart';
 export 'src/sign_in/api/youversion_sign_in.dart';
 export 'src/sign_in/models/permission.dart';
 export 'src/sign_in/oauth_loopback_server_stub.dart' if (dart.library.io) 'src/sign_in/oauth_loopback_server.dart';
