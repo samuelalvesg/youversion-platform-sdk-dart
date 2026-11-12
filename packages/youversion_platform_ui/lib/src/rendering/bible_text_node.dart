@@ -370,8 +370,9 @@ Map<String, String> splitPassageHtmlByVerse(String html) {
 
   walk = (node, {required inWordsOfChrist}) {
     if (node is dom.Text) {
-      if (node.text.trim().isEmpty || currentVerseNumber.isEmpty)
+      if (node.text.trim().isEmpty || currentVerseNumber.isEmpty) {
         return const {};
+      }
       final text = escaper.convert(node.text);
       return {
         currentVerseNumber:
@@ -442,8 +443,9 @@ String? extractVersePlainText(String html, String verseNumber) {
     if (run.lineBreakIndentLevel != null) {
       buffer.writeln();
     } else if (run.text.isNotEmpty) {
-      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n'))
+      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) {
         buffer.write(' ');
+      }
       buffer.write(run.text.trim());
     }
   }

@@ -28,6 +28,8 @@ dependencies:
   youversion_platform_core:
     path: ../youversion_platform_core
 
+  cupertino_ui: any
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

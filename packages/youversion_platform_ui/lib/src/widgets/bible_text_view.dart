@@ -1,5 +1,5 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../rendering/bible_text_node.dart';
 import '../rendering/verse_gesture_recognizer.dart';
@@ -293,8 +293,9 @@ class _BibleTextViewState extends State<BibleTextView> {
 
   GestureRecognizer? _recognizerFor(String? verseId) {
     if (verseId == null ||
-        (widget.onVerseTap == null && widget.onVerseLongPress == null))
+        (widget.onVerseTap == null && widget.onVerseLongPress == null)) {
       return null;
+    }
     final recognizer = verseTapLongPressRecognizer(
       onTap:
           widget.onVerseTap == null ? null : () => widget.onVerseTap!(verseId),

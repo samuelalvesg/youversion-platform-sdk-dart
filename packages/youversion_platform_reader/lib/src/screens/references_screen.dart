@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:youversion_platform_core/youversion_platform_core.dart';
 
 import '../l10n/youversion_reader_strings.dart';

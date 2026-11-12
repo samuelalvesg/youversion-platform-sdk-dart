@@ -7,7 +7,7 @@
 //
 // Get a free App Key at https://developers.youversion.com and run with
 // `flutter run --dart-define=APP_KEY=your-key-here`.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:youversion_platform_core/youversion_platform_core.dart';
 import 'package:youversion_platform_reader/youversion_platform_reader.dart';
 import 'package:youversion_platform_ui/youversion_platform_ui.dart';

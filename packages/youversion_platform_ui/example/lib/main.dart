@@ -4,7 +4,7 @@
 // network themselves" design of this package. A real app would fetch this
 // data via `youversion_platform_core`'s `YouVersionContentClient`/
 // `YouVersionLanguagesClient` first.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:youversion_platform_core/youversion_platform_core.dart';
 import 'package:youversion_platform_ui/youversion_platform_ui.dart';
 

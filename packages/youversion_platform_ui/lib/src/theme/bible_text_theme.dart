@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Reading-optimized typographic scale, separate from Material's
 /// [TextTheme] since scripture needs a wider size range (accessibility

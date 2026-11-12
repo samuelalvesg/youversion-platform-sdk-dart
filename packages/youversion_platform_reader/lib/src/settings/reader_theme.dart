@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One of the reading-canvas color presets the official readers offer,
 /// distinct from a plain light/dark switch (e.g. Sepia/Cream are light

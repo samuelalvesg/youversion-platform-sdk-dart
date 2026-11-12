@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'bible_text_theme.dart';
 import 'reader_color_scheme.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Color roles the reading UI needs that Material's [ColorScheme] doesn't
 /// have a slot for: highlight overlay, "words of Christ" red-letter tint,
