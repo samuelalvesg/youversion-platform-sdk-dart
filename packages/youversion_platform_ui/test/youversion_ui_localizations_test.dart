@@ -1,3 +1,4 @@
+import 'package:cupertino_ui/cupertino_ui.dart' show GlobalCupertinoLocalizations;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youversion_platform_ui/youversion_platform_ui.dart';
@@ -17,7 +18,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('pt'),
-        localizationsDelegates: YouVersionUiLocalizations.localizationsDelegates,
+        // The generated list carries Flutter's own Material/Cupertino delegates; `material_ui` and
+        // `cupertino_ui` look for their own, so the test registers those too.
+        localizationsDelegates: [
+          ...YouVersionUiLocalizations.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         supportedLocales: YouVersionUiLocalizations.supportedLocales,
         home: Scaffold(body: YouVersionSignInButton(onPressed: () {})),
       ),
