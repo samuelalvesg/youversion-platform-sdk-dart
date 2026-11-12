@@ -1,9 +1,14 @@
 import 'dart:async';
 
+import 'package:material_ui/material_ui.dart' as material_ui;
+import 'package:cupertino_ui/cupertino_ui.dart' as cupertino;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
+
+
 
 import 'youversion_reader_localizations_af.dart';
 import 'youversion_reader_localizations_ar.dart';
@@ -100,8 +105,8 @@ abstract class YouVersionReaderLocalizations {
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
     delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
+    material_ui.GlobalMaterialLocalizations.delegate,
+    cupertino.GlobalCupertinoLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,
   ];
 
