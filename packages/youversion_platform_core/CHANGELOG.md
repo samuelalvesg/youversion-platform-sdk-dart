@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0-alpha.1
 
 - `YouVersionHighlightsSyncEngine`: a `404` on `deleteHighlight` (the
   highlight was already removed server-side - another device, or an

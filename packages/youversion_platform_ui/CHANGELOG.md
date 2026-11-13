@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0-alpha.1
 
 - Right-clicking a verse (`onSecondaryTapUp`) now also fires
   `onVerseLongPress` - a desktop-native alternative to press-and-hold for
