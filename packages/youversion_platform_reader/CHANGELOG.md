@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0-alpha.1
 
 - `BibleReader`'s signed-in highlight writes (`_applyHighlight`/
   `_removeHighlight`) now go through `_core`'s new
