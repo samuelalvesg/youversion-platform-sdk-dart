@@ -8,7 +8,8 @@ import '../models/verse_image.dart';
 ///
 /// Responses are `Cache-Control: private` and image ids are minted per
 /// response: cache per user/session with a key that includes the request
-/// parameters, never share them, and do not store ids.
+/// parameters, never share them, and do not store ids. This client keeps no
+/// cache of its own; the rule applies to whoever caches the responses.
 class YouVersionImagesClient {
   YouVersionImagesClient({
     required String appKey,
