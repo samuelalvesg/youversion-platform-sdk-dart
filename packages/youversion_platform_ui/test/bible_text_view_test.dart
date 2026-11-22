@@ -387,4 +387,75 @@ void main() {
 
     expect(find.byType(RichText), findsNWidgets(2));
   });
+
+  group('footer link', () {
+    Future<void> pump(
+      WidgetTester tester, {
+      String? footer = 'Line one\nLine two',
+      String? url,
+      String? label,
+      void Function(String)? onTap,
+    }) {
+      return tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BibleTextView(
+              content: content,
+              footer: footer,
+              footerUrl: url,
+              footerLinkLabel: label,
+              onFooterLinkTap: onTap,
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('no link without footerUrl', (tester) async {
+      await pump(tester);
+      expect(find.byType(GestureDetector), findsNothing);
+      expect(find.bySemanticsLabel('example.org'), findsNothing);
+    });
+
+    testWidgets('tap calls the callback with the exact url', (tester) async {
+      String? tapped;
+      const url = 'https://example.org/path?q=1';
+      await pump(tester,
+          url: url, label: 'Publisher', onTap: (u) => tapped = u);
+      await tester.tap(find.text('Publisher'));
+      expect(tapped, url);
+    });
+
+    testWidgets('null label falls back to the host', (tester) async {
+      await pump(tester, url: 'https://example.org/path', onTap: (_) {});
+      expect(find.text('example.org'), findsOneWidget);
+    });
+
+    testWidgets('invalid url produces no link', (tester) async {
+      await pump(tester,
+          url: 'javascript:alert(1)', label: 'Bad', onTap: (_) {});
+      expect(find.text('Bad'), findsNothing);
+    });
+
+    testWidgets('without callback the link shows and tap does nothing',
+        (tester) async {
+      await pump(tester, url: 'https://example.org', label: 'Publisher');
+      expect(find.text('Publisher'), findsOneWidget);
+      await tester.tap(find.text('Publisher'));
+    });
+
+    testWidgets('link target is at least 48dp tall', (tester) async {
+      await pump(tester, url: 'https://example.org', label: 'Publisher');
+      final size = tester.getSize(find
+          .ancestor(
+              of: find.text('Publisher'), matching: find.byType(ConstrainedBox))
+          .first);
+      expect(size.height, greaterThanOrEqualTo(48));
+    });
+
+    testWidgets('footer line breaks are preserved', (tester) async {
+      await pump(tester, url: 'https://example.org', label: 'Publisher');
+      expect(find.text('Line one\nLine two'), findsOneWidget);
+    });
+  });
 }

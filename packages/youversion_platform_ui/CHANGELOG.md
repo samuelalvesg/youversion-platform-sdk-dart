@@ -1,3 +1,12 @@
+## 0.4.0-alpha.2
+
+- `BibleTextView` footer can carry a publisher link: new optional
+  `footerUrl`, `footerLinkLabel` (defaults to the URL host) and
+  `onFooterLinkTap`. Only http(s) URLs with a host render a link. The SDK
+  does not open the URL; the app does it in the callback. Without the
+  callback the link is shown but not tappable. Semantics: `link: true`,
+  touch target of at least 48dp.
+
 ## 0.4.0-alpha.1
 
 - Right-clicking a verse (`onSecondaryTapUp`) now also fires
