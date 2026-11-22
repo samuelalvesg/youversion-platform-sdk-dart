@@ -1,6 +1,18 @@
 /// CDN renditions accepted by an image URL's `size` query parameter.
 enum VerseImageSize { thumb, card, full }
 
+/// Optional brand overlay the CDN serves as a transparent PNG. The API guide
+/// does not require it; the app decides whether to draw it.
+class VerseImageBranding {
+  const VerseImageBranding._();
+
+  static const overlayUrl =
+      'https://cdn.youversion.com/branding/bible-app-overlay-white.png';
+
+  /// Width of the overlay PNG in pixels.
+  static const overlayWidth = 660;
+}
+
 /// A verse-art record (`GET /v1/images/{image_id}` and the `/v1/images`
 /// collection). The API never returns bytes: [imageUrl] points at the CDN.
 class VerseImage {

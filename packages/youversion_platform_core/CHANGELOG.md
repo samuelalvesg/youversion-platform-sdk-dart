@@ -1,3 +1,15 @@
+## 0.4.0-alpha.2
+
+- New `YouVersionFontsClient` (`GET /v1/fonts/{id}`) and `YouVersionFont`
+  models. Font files are accepted only from `api.youversion.com` and
+  `cdn.youversion.com`; weights are 400, 500 or 700; formats `woff2` or `ttf`.
+- New `contentLifetime({cacheControl, age})`: how long a Bible content
+  response may be kept, from `Cache-Control` (`max-age` minus `Age`, clamped
+  at zero; seven days without a usable `max-age`; `no-store` and `no-cache`
+  return `null`). Same rules as the React Native, Swift and Kotlin SDKs.
+- New `VerseImageBranding`: URL and width of the optional brand overlay PNG.
+- `YouVersionImagesClient` documents that it keeps no cache of its own.
+
 ## 0.4.0-alpha.1
 
 - `YouVersionHighlightsSyncEngine`: a `404` on `deleteHighlight` (the
