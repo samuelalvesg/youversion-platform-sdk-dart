@@ -33,6 +33,9 @@ class BibleTextView extends StatefulWidget {
     required this.content,
     this.chapterId,
     this.footer,
+    this.footerUrl,
+    this.footerLinkLabel,
+    this.onFooterLinkTap,
     this.selectedVerseIds = const {},
     this.highlightsByVerseId = const {},
     this.notedVerseIds = const {},
@@ -60,6 +63,19 @@ class BibleTextView extends StatefulWidget {
 
   /// Optional reader-footer text (`Bible.readerFooter`).
   final String? footer;
+
+  /// Publisher link shown under [footer]. Only http(s) URLs with a host
+  /// become a link; anything else (`javascript:`, relative, empty) is
+  /// ignored. The SDK never opens it - see [onFooterLinkTap].
+  final String? footerUrl;
+
+  /// Visible label of the footer link, supplied by the app (the SDK ships no
+  /// localized text). Falls back to the host of [footerUrl].
+  final String? footerLinkLabel;
+
+  /// Called with the exact [footerUrl] when the link is tapped. When null the
+  /// link is displayed but not tappable.
+  final void Function(String url)? onFooterLinkTap;
 
   /// Full USFM ids (e.g. `"JHN.3.16"`) of every verse currently selected -
   /// each drawn with a dashed underline plus a lighter selection tint.
@@ -394,6 +410,10 @@ class _BibleTextViewState extends State<BibleTextView> {
       children.add(const SizedBox(height: 12));
       children.add(Text(widget.footer!, style: textTheme.caption));
     }
+    final footerLink = _buildFooterLink(textTheme);
+    if (footerLink != null) {
+      children.add(footerLink);
+    }
 
     final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,6 +424,40 @@ class _BibleTextViewState extends State<BibleTextView> {
       textDirection:
           widget.isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
       child: content,
+    );
+  }
+
+  Widget? _buildFooterLink(BibleTextTheme textTheme) {
+    final url = widget.footerUrl;
+    if (url == null) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null ||
+        !(uri.scheme == 'http' || uri.scheme == 'https') ||
+        uri.host.isEmpty) {
+      return null;
+    }
+    final custom = widget.footerLinkLabel;
+    final label = (custom != null && custom.isNotEmpty) ? custom : uri.host;
+    final onTap = widget.onFooterLinkTap;
+
+    final text = Text(
+      label,
+      style: textTheme.caption.copyWith(decoration: TextDecoration.underline),
+    );
+    return Semantics(
+      link: true,
+      label: label,
+      onTap: onTap == null ? null : () => onTap(url),
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap == null ? null : () => onTap(url),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          child:
+              Align(alignment: AlignmentDirectional.centerStart, child: text),
+        ),
+      ),
     );
   }
 
