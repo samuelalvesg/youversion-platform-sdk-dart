@@ -1,0 +1,25 @@
+{
+  "prefersReducedMotion": true,
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "dart-flutter": {
+      "source": {
+        "source": "github",
+        "repo": "flutter/agent-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "code-review@claude-plugins-official": true,
+    "dart-flutter@dart-flutter": true
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}
