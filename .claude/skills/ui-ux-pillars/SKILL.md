@@ -27,5 +27,11 @@ description: UI/UX review checklist for Flutter shared components and screens, g
 - Labels, tooltips and messages come from parameters (no fixed language); changed defaults are breaking: CHANGELOG and version.
 - Each finding ships with a widget test (semantics, text scale, dark theme, narrow and wide width).
 
+## 6. Motion and shared elements
+- Pick the Material pattern by relationship: container transform (card to detail), shared axis (spatial or flow), fade through (unrelated destinations such as bottom-bar tabs), fade (dialogs, menus).
+- `Hero` needs a route push; a tab switch is not a route, and Hero does not work inside `OpenContainer` or `PageTransitionSwitcher`. Check `HeroController` per navigator when using nested or shell routes.
+- Durations and curves come from one token set; animate `transform` and `opacity`; reduced motion turns movement into a cut.
+- Check `animations` (first-party package) compatibility with the UI library in use before proposing it.
+
 # Output
 Findings by priority (high, medium, low) with file:line, the reference that backs each, and `NÃO VERIFICADO` for anything judged by reading code only.
