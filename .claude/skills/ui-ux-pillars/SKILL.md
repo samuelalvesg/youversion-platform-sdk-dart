@@ -17,6 +17,7 @@ description: UI/UX review checklist for Flutter shared components and screens, g
 
 ## 3. Accessibility (see `a11y-audit` for the full list)
 - Custom tap targets (`GestureDetector`, `InkWell` with fixed size) ≥ 48 dp, keyboard focus, hover/focus state, `Semantics` (label, `button`, `selected`, `expanded`).
+- Keyboard: Tab order follows reading order; arrows move between sibling destinations; Enter/Space activate; a focus ring visible against both themes (keyboard only); shortcuts documented, switchable off, and not colliding with browser or OS ones (Alt+digit, not Ctrl+digit). Test with `sendKeyEvent`.
 - Text scale 200% and `MediaQuery.disableAnimationsOf`: nothing truncates, motion collapses to `Duration.zero`.
 
 ## 4. States and feedback
