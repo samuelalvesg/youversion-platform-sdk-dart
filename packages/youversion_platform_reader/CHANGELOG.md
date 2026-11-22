@@ -1,3 +1,9 @@
+## 0.4.0-alpha.2
+
+- Versão alinhada ao pacote inteiro do SDK (`v0.4.0-alpha.2`). Sem mudança de
+  código nesta versão: `youversion_platform_core` e `youversion_platform_ui`
+  também estão em `0.4.0-alpha.2`.
+
 ## 0.4.0-alpha.1
 
 - `BibleReader`'s signed-in highlight writes (`_applyHighlight`/
