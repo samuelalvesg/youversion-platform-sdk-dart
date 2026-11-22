@@ -21,6 +21,41 @@ void main() {
 
       expect(extractVersePlainText(html, '99'), isNull);
     });
+
+    test('removes a pilcrow glued to the first word', () {
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="7"></span><span class="yv-vlbl">7</span>¶Where can I go from Your Spirit?
+        </div>
+      ''';
+
+      expect(extractVersePlainText(html, '7'),
+          'Where can I go from Your Spirit?');
+    });
+
+    test('skips a run that is only a pilcrow', () {
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="7"></span><span class="yv-vlbl">7</span><span>¶</span><span>Where can I go</span> from Your Spirit?
+        </div>
+      ''';
+
+      final text = extractVersePlainText(html, '7');
+
+      expect(text, isNot(contains('¶')));
+      expect(text, startsWith('Where can I go'));
+      expect(text, isNot(contains('  ')));
+    });
+
+    test('leaves a verse without a pilcrow unchanged', () {
+      const html = '''
+        <div class="p">
+          <span class="yv-v" v="2"></span><span class="yv-vlbl">2</span>Verse two text.
+        </div>
+      ''';
+
+      expect(extractVersePlainText(html, '2'), 'Verse two text.');
+    });
   });
 
   group('parseBibleHtml', () {

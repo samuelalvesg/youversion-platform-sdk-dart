@@ -1,3 +1,10 @@
+## 0.4.0-alpha.3
+
+- Fix: `extractVersePlainText` no longer leaks the paragraph mark `¶`
+  (e.g. `“¶Where can I go...`) into copied/shared text and TTS. The mark is
+  removed from each run, even when glued to a word; runs left empty are
+  skipped. Display (`BibleTextView`) is unchanged.
+
 ## 0.4.0-alpha.2
 
 - `BibleTextView` footer can carry a publisher link: new optional

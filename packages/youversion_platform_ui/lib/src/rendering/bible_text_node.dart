@@ -426,7 +426,8 @@ Map<String, String> splitPassageHtmlByVerse(String html) {
 
 /// Plain text of a single verse (its local number, e.g. `"16"` - not the
 /// full USFM id) within [html] - every run's text joined with a space,
-/// footnote-marker/line-break runs (empty [BibleTextRun.text]) skipped, and
+/// footnote-marker/line-break runs (empty [BibleTextRun.text]) skipped, the
+/// paragraph mark `¶` removed (runs left empty are skipped), and
 /// a poetry line break becomes a newline instead of a space. `null` if
 /// [verseNumber] isn't present. For copy/share actions - the caller
 /// already has [content] rendered via [parseBibleHtml] for display, this
@@ -442,11 +443,14 @@ String? extractVersePlainText(String html, String verseNumber) {
   for (final run in block.runs) {
     if (run.lineBreakIndentLevel != null) {
       buffer.writeln();
-    } else if (run.text.isNotEmpty) {
+    } else {
+      // The pilcrow can be glued to a word inside one text node.
+      final text = run.text.replaceAll('¶', '').trim();
+      if (text.isEmpty) continue;
       if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) {
         buffer.write(' ');
       }
-      buffer.write(run.text.trim());
+      buffer.write(text);
     }
   }
   return buffer.toString().trim();
